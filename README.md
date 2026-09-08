@@ -35,6 +35,16 @@ tombstones so a delete on one device does not come back from another.
 
 If you never connect GitHub, everything still works and stays on one device.
 
+## Building it yourself
+
+```
+python3 scripts/build_problems.py    # clone/pull the dump -> data/problems.json
+python3 scripts/build_app.py         # -> docs/ and dist/
+```
+
+Then open `docs/index.html` through any static server. Opening the file
+directly works too, but a `file://` page gets no service worker.
+
 ## Layout
 
 | Path | What |
@@ -45,14 +55,14 @@ If you never connect GitHub, everything still works and stays on one device.
 | `data/playbook.json` | The 34 pattern templates. |
 | `app/template.html` | App source, no framework, no build step. |
 | `scripts/build_app.py` | Merges data into the template, writes `docs/` and `dist/`. |
-| `docs/` | What GitHub Pages serves. |
-| `dist/index.html` | The same page as a Claude Artifact fragment. |
+| `docs/` | Generated. Built by CI and uploaded to Pages. Not in git. |
+| `dist/index.html` | Generated. The same page as a Claude Artifact fragment. Not in git. |
 
 ## Adding new solves
 
-A nightly GitHub Action pulls the dump, rebuilds, and commits if anything
-changed, so new problems appear in the deck on their own. They arrive without
-notes, showing as untagged. To write notes for them, ask Claude Code
+A nightly GitHub Action pulls the dump, rebuilds, and deploys to Pages, so new
+problems appear in the deck on their own. They arrive without notes, showing as
+untagged. To write notes for them, ask Claude Code
 **"sync my leetcode deck"** in this repo, or fill them in from the app:
 Library, open the problem, Edit.
 
