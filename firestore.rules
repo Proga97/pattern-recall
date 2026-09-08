@@ -12,12 +12,5 @@ service cloud.firestore {
     match /settings/{id} { allow read, write: if true; }
 
     match /tasks/{id}    { allow read, write: if true; }
-
-    // Only so the app can move data out of the old users/me layout and delete
-    // it. Once your console shows no users collection, this block can go.
-    match /users/{userId} {
-      allow read, write: if true;
-      match /{sub}/{docId} { allow read, write: if true; }
-    }
   }
 }
