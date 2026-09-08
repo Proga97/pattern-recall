@@ -1137,8 +1137,8 @@ function renderSettings(){ $('#set-new').value=S.settings.newPerDay; $('#set-ord
     const viaClaude = mode==='db';
     c.innerHTML='<span class="label">Sync</span>'+
       '<p class="small" style="margin:0">'+(viaClaude
-        ? 'Right now this copy syncs through Claude. Connect GitHub instead and your progress lives in your own account, independent of any subscription.'
-        : 'Progress is saved on this device only. Connect GitHub to sync your phone and laptop through a private gist you own.')+'</p>'+
+        ? 'Right now this copy syncs through Claude. Connect Firebase instead and your progress lives in your own Google account, independent of any subscription.'
+        : 'Progress is saved on this device only. Connect Firebase to sync your phone and laptop through a database on your own Google account. Setup is in SETUP.md in the repo.')+'</p>'+
       '<div class="row wrap"><button class="btn sm primary" id="sync-db">Connect Firebase</button><button class="btn sm ghost" id="sync-setup">Use a GitHub gist</button></div>';
     $('#sync-setup').onclick=openSyncSetup;
     $('#sync-db').onclick=openFirebaseSetup;
