@@ -2,6 +2,23 @@
 
 Two clicks in the Firebase console. Nothing to do in the app.
 
+## Publishing the rules from the terminal
+
+The console works, but this is one command and cannot be published to the wrong
+project, since the project is pinned in `.firebaserc`.
+
+```
+npx firebase login
+```
+
+```
+npx firebase deploy --only firestore:rules
+```
+
+The first opens a browser for you to sign in to Google; I cannot do that part.
+The second reads `firestore.rules` from this repo and publishes it. Re-run the
+second command any time the rules change.
+
 ## Step 1: create the database
 
 1. Open the project at https://console.firebase.google.com. It is
