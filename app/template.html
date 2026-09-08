@@ -493,19 +493,26 @@ async function fbFlush(){
   const q=fbQ; fbQ={};
   const colls=Object.keys(q);
   if(!colls.length) return;
-  try{
-    const batch=fbDb.batch();
-    let n=0;
-    for(const c of colls){
-      for(const id in q[c]){
-        if(c==='settings'){ batch.set(fbSettingsRef(), Object.assign({}, S.settings, {_m:S.settings._m||Date.now()})); n++; continue; }
-        const ref=fbSub(c).doc(fbIdFor(c,id));
-        if(q[c][id]==='del'){ batch.delete(ref); n++; }
-        else { const v=S[c][id]; if(v){ batch.set(ref, v); n++; } }
-      }
+  // Collect first, then commit in slices: a Firestore batch caps at 500
+  // operations, and a full reset of 281 cards would blow straight past it.
+  const ops=[];
+  for(const c of colls){
+    for(const id in q[c]){
+      if(c==='settings'){ ops.push({ref:fbSettingsRef(), op:'set', data:Object.assign({}, S.settings, {_m:S.settings._m||Date.now()})}); continue; }
+      const ref=fbSub(c).doc(fbIdFor(c,id));
+      if(q[c][id]==='del') ops.push({ref:ref, op:'del'});
+      else { const v=S[c][id]; if(v) ops.push({ref:ref, op:'set', data:v}); }
     }
+  }
+  if(!ops.length){ pushPending=false; return; }
+  try{
     fbSelfWrite=Date.now();
-    if(n) await batch.commit();
+    for(let i=0;i<ops.length;i+=450){
+      const batch=fbDb.batch();
+      ops.slice(i,i+450).forEach(function(o){ o.op==='del' ? batch.delete(o.ref) : batch.set(o.ref, o.data); });
+      await batch.commit();
+      fbSelfWrite=Date.now();
+    }
     pushPending=false; lastSync=Date.now(); LS.set('lastsync',lastSync); setSync('ok','synced');
   }catch(e){
     // put them back and try again; nothing is lost, local storage already has it
@@ -513,12 +520,6 @@ async function fbFlush(){
     setSync('local','saved on device');
     clearTimeout(pushTimer); pushTimer=setTimeout(fbFlush, 8000);
   }
-}
-// A remote document only wins if it is newer than what this device holds.
-function fbTake(coll, key, data){
-  const mine=S[coll][key];
-  if(mine && (mine._m||0) >= (data._m||0)) return false;
-  S[coll][key]=data; return true;
 }
 function fbWatch(){
   fbUnsub.forEach(function(u){ try{ u(); }catch(e){} }); fbUnsub=[];
@@ -1168,9 +1169,15 @@ $('#export').onclick=async function(){ const j=JSON.stringify({cards:S.cards,not
   try{ await navigator.clipboard.writeText(j); toast('Copied to clipboard'); }catch(e){ openSheet('<textarea style="min-height:300px" class="mono">'+esc(j)+'</textarea>'); } };
 $('#reset-all').onclick=async function(){ if(!confirm('Delete all review progress on every device? Your notes are kept.')) return;
   if(!confirm('Really reset? This cannot be undone.')) return;
+  const btn=$('#reset-all'); btn.disabled=true; btn.textContent='Resetting';
   for(const id of Object.keys(S.cards)) await delDoc('cards',id);
   for(const d of Object.keys(S.days)) await delDoc('days',d);
   for(const k of Object.keys(S.drill)) await delDoc('drill',k);
+  // wait for the deletes to actually reach Firestore, otherwise closing the
+  // tab strands them and the next start uploads everything again
+  clearTimeout(pushTimer);
+  if(mode==='firebase') await fbFlush(); else if(mode==='gist') await gistSync(true);
+  btn.disabled=false; btn.textContent='Reset all progress';
   toast('Progress reset'); render(); };
 
 connect();
