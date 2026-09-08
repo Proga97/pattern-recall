@@ -489,7 +489,11 @@ async function fbStart(){
   mode='firebase'; setSync('','syncing');
   const doc=await fbRef().get();
   const changed = doc.exists ? fbApply(doc.data()) : false;
-  if(!doc.exists) await fbRef().set(fbSnapshotDoc());
+  // Always push the merged state, not just when the document is missing.
+  // A device that already has local history must upload it on first connect,
+  // otherwise its reviews would sit here forever and never reach the others.
+  fbSelfWrite=Date.now();
+  await fbRef().set(fbSnapshotDoc());
   lastSync=Date.now(); LS.set('lastsync',lastSync); setSync('ok','synced');
   fbWatch(); if(changed) render();
   return true;
