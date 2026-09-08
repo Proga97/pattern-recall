@@ -30,10 +30,11 @@ for p in problems:
     p["variants"] = r.get("variants", [])
 patterns = [l.strip() for l in open(ROOT/".work/PATTERNS.txt") if l.strip()] if (ROOT/".work/PATTERNS.txt").exists() else []
 playbook = json.load(open(ROOT/"data/playbook.json")) if (ROOT/"data/playbook.json").exists() else []
+firebase = json.load(open(ROOT/"data/firebase.json")) if (ROOT/"data/firebase.json").exists() else None
 missing_recog = [p["id"] for p in problems if not p.get("signals")]
 if missing_recog:
     print("WARNING: no recognition cues for", len(missing_recog), "problems")
-data = json.dumps({"problems": problems, "patterns": patterns, "playbook": playbook, "built": __import__("datetime").date.today().isoformat()}, ensure_ascii=False)
+data = json.dumps({"problems": problems, "patterns": patterns, "playbook": playbook, "firebase": firebase, "built": __import__("datetime").date.today().isoformat()}, ensure_ascii=False)
 data = data.replace("</", "<\\/")
 tpl = (ROOT/"app/template.html").read_text()
 assert "/*__DATA__*/" in tpl

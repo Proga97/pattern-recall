@@ -419,6 +419,7 @@ async function remoteSync(force){ if(mode==='gist') return gistSync(force); if(m
 // account. Sign-in is Google, so there is no key to paste on each device.
 const FB_VER='11.3.1';
 const FB_CDN='https://cdnjs.cloudflare.com/ajax/libs/firebase/'+FB_VER+'/';
+const FB_DEFAULT = DATA.firebase || null;
 const FBC = { get cfg(){ try{ return JSON.parse(RAW.get('fbcfg')||'null'); }catch(e){ return null; } },
               set cfg(v){ RAW.set('fbcfg', v? JSON.stringify(v):''); } };
 let fbApp=null, fbDb=null, fbAuth=null, fbUser=null, fbUnsub=[];
@@ -1002,13 +1003,16 @@ $('#add-btn').onclick=function(){
 function openFirebaseSetup(){
   openSheet('<h2 style="font-size:20px;margin-bottom:6px">Sync through your own Firebase</h2>'+
     '<p class="muted small" style="margin:0 0 16px">Your progress lives in a Firestore database on your own Google account and updates across devices the moment it changes. Nothing to paste but the project config, which is public by design; the security rules are what protect the data.</p>'+
-    '<ol class="steps" style="margin-bottom:18px">'+
-      '<li><span>At <a href="https://console.firebase.google.com" target="_blank" rel="noopener">console.firebase.google.com</a>, create a project and add a Web app.</span></li>'+
-      '<li><span>Copy the firebaseConfig object it shows you and paste it below.</span></li>'+
-      '<li><span>Under Build, Firestore Database, create a database, then paste the rules from firestore.rules in the repo.</span></li>'+
-      '<li><span>Under Authentication, enable the Google provider, and add this site under Settings, Authorized domains.</span></li>'+
-    '</ol>'+
-    '<div class="form"><label>firebaseConfig<textarea id="fb-cfg" style="min-height:150px" class="mono" autocapitalize="none" spellcheck="false" placeholder=\'{ "apiKey": "...", "authDomain": "...", "projectId": "...", "appId": "..." }\'></textarea></label></div>'+
+    (FB_DEFAULT
+      ? '<p class="small" style="margin:0 0 16px">This build already points at your project, <span class="mono">'+esc(FB_DEFAULT.projectId)+'</span>. Just sign in with the same Google account on every device.</p>'
+      : '<ol class="steps" style="margin-bottom:18px">'+
+        '<li><span>At <a href="https://console.firebase.google.com" target="_blank" rel="noopener">console.firebase.google.com</a>, create a project and add a Web app.</span></li>'+
+        '<li><span>Copy the firebaseConfig object it shows you and paste it below.</span></li>'+
+        '<li><span>Under Build, Firestore Database, create a database, then paste the rules from firestore.rules in the repo.</span></li>'+
+        '<li><span>Under Authentication, enable the Google provider, and add this site under Settings, Authorized domains.</span></li>'+
+        '</ol>')+
+    '<details'+(FB_DEFAULT?'':' open')+'><summary>'+(FB_DEFAULT?'Use a different project':'Project config')+'</summary>'+
+    '<div class="form" style="margin-top:10px"><label>firebaseConfig<textarea id="fb-cfg" style="min-height:150px" class="mono" autocapitalize="none" spellcheck="false" placeholder=\'{ "apiKey": "...", "projectId": "..." }\'>'+esc(FB_DEFAULT?JSON.stringify(FB_DEFAULT,null,1):'')+'</textarea></label></div></details>'+
     '<div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn ghost" id="fb-cancel">Cancel</button><button class="btn primary" id="fb-save">Sign in with Google</button></div>');
   $('#fb-cancel').onclick=closeSheet;
   $('#fb-save').onclick=async function(){

@@ -10,16 +10,17 @@ rules in `firestore.rules`.
 
 ## Step 1: create the project
 
-1. Go to https://console.firebase.google.com and click **Create a project**.
-   Name it anything. Google Analytics is not needed, turn it off.
-2. On the project home, click the **web** icon, the one that looks like `</>`,
-   to register a web app. Name it anything.
-3. It shows you a `firebaseConfig` object. Copy the whole thing, from the
-   opening brace to the closing brace. Keep it somewhere you can paste from on
-   your phone.
+Already done. The project is `leet-recall-861a3` and its config is baked into
+the build in `data/firebase.json`, so no device has to paste anything.
 
 That config is not a secret. It identifies the project, it does not grant
-access. Firebase publishes it in every web app.
+access, and Firebase publishes it in every web app it generates. If you ever
+want a second layer, restrict the API key to your domain in the Google Cloud
+console under APIs and Services, Credentials, HTTP referrers.
+
+To point the app at a different project instead, replace `data/firebase.json`
+and rebuild, or paste another config under "Use a different project" in the
+Connect Firebase sheet.
 
 ## Step 2: create the database
 
@@ -47,11 +48,10 @@ outside the user tree. All denied.
 ## Step 4: connect the app
 
 Open https://proga97.github.io/pattern-recall/ then **Settings**,
-**Connect Firebase**. Paste the config from step 1 and press
-**Sign in with Google**. Pick your account and you are done.
+**Connect Firebase**, and press **Sign in with Google**. The project is already
+filled in, so there is nothing to paste.
 
-On your other device, do exactly the same. Same config, same Google account,
-same data. Nothing else to copy across.
+On your other device, do the same. Same Google account means the same data.
 
 ## How the syncing works
 
