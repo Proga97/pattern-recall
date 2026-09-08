@@ -38,6 +38,7 @@ data = data.replace("</", "<\\/")
 tpl = (ROOT/"app/template.html").read_text()
 assert "/*__DATA__*/" in tpl
 out = tpl.replace("/*__DATA__*/", data)
+(ROOT/"dist").mkdir(exist_ok=True)
 (ROOT/"dist/index.html").write_text(out)
 # standalone build for GitHub Pages (the Artifact host injects head/viewport; here we write our own)
 docs = ROOT / "docs"
