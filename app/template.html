@@ -129,6 +129,8 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:2px 0}
 .qcard h2{font-size:21px;font-weight:600;letter-spacing:-.01em;margin:8px 0 12px}
 .qcard h2 .num{color:var(--ink3);font-weight:500;font-family:var(--mono);font-size:15px;margin-right:8px}
 .stmt{color:var(--ink2);font-size:16px;margin:0}
+.stmt.clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.more{color:var(--accent);font-size:14px;font-weight:500;min-height:34px;padding:6px 0}
 .prompt{margin-top:16px;padding:12px 14px;border-radius:12px;background:var(--accent-soft);color:var(--accent);font-size:14px;font-weight:500}
 .desc{font-size:15px;color:var(--ink2);line-height:1.55}
 .desc pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:13px;white-space:pre-wrap;overflow-x:auto}
@@ -176,6 +178,7 @@ pre.code{margin:0;background:var(--code-bg);border:1px solid var(--line);border-
 .opt.wrong .mark{border-color:var(--hard);background:var(--hard);color:var(--surface)}
 .opt[disabled]{cursor:default}
 .verdict{font-weight:600;font-size:16px;margin:0}
+.ask{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:16px 2px 9px}
 .verdict.ok{color:var(--easy)} .verdict.no{color:var(--hard)}
 
 /* library */
@@ -610,13 +613,36 @@ function nextCard(){
 function head(p){ const c=cardOf(p.id);
   const st=c.state==='new'?'new card':(c.state==='review'?('review, '+fmtIvl(c.ivl*DAY)+' interval'):'learning');
   return '<div class="row" style="justify-content:space-between"><span class="chip '+dcls(p.difficulty)+'">'+p.difficulty+'</span><span class="label">'+st+'</span></div><h2><span class="num">'+p.num+'</span>'+esc(p.title)+'</h2>'; }
-function renderFront(){ const p=R.p, full=S.settings.full;
+function renderFront(){ const p=R.p, full=S.settings.full, n=noteOf(p);
+  const correct=n.patterns[0];
+  R.mcq = correct ? {correct:correct, opts:distractors(correct,n).concat([correct]).sort(()=>Math.random()-.5)} : null;
+  R.pick = null;
   $('#rv-body').innerHTML='<div class="qcard">'+head(p)+
     (full ? '<div class="desc scroll">'+(p.description_html||esc(p.short))+'</div>'
-          : '<p class="stmt">'+esc(p.short)+'</p><details style="margin-top:10px"><summary>Full problem</summary><div class="desc scroll" style="margin-top:8px">'+(p.description_html||'')+'</div></details>')+
-    '<div class="prompt">Name the pattern. Say the key idea out loud. Which words gave it away?</div></div>';
-  bar('<button class="btn primary" id="flip">Show answer</button><div class="kbd">space to show answer</div>');
+          : '<p class="stmt'+(correct?' clamp':'')+'" id="rv-stmt">'+esc(p.short)+'</p><button class="more" id="rv-more" hidden>Show the whole statement</button><details style="margin-top:6px"><summary>Examples and constraints</summary><div class="desc scroll" style="margin-top:8px">'+(p.description_html||'')+'</div></details>')+
+    '</div>'+
+    (R.mcq
+      ? '<div class="ask"><span class="label">Which pattern?</span><span class="faint small">then say the key idea out loud</span></div>'+
+        '<div class="opts" id="rv-opts">'+R.mcq.opts.map(o=>'<button class="opt" data-o="'+esc(o)+'"><span class="mark"></span>'+esc(o)+'</button>').join('')+'</div>'
+      : '<div class="prompt">Name the pattern and say the key idea out loud. Which words gave it away?</div>')+
+    (R.mcq ? '<div class="row" style="justify-content:center;margin-top:4px"><button class="more" id="flip">Skip to the answer</button></div><div class="kbd">1-4 to answer, space to skip</div>' : '');
+  if(R.mcq) clearBar(); else bar('<button class="btn primary" id="flip">Show answer</button><div class="kbd">space to show answer</div>');
   $('#flip').onclick=flip;
+  $$('#rv-opts .opt').forEach(b=>b.onclick=()=>pickPattern(b.dataset.o));
+  const st=$('#rv-stmt'), more=$('#rv-more');
+  if(st&&more&&st.classList.contains('clamp')&&st.scrollHeight>st.clientHeight+2){
+    more.hidden=false; more.onclick=function(){ st.classList.remove('clamp'); more.hidden=true; }; }
+}
+async function pickPattern(chosen){
+  if(!R||R.flipped||R.pick) return;
+  R.pick=chosen; const ok=chosen===R.mcq.correct; buzz(ok?8:[10,40,10]);
+  $$('#rv-opts .opt').forEach(function(b){ b.disabled=true;
+    if(b.dataset.o===R.mcq.correct){ b.classList.add('right'); b.querySelector('.mark').textContent='+'; }
+    else if(b.dataset.o===chosen){ b.classList.add('wrong'); b.querySelector('.mark').textContent='x'; } });
+  const d=Object.assign({right:0,wrong:0}, S.drill[R.mcq.correct]||{});
+  if(ok) d.right++; else d.wrong++;
+  writeDoc('drill', R.mcq.correct, d);
+  setTimeout(flip, ok?280:650);
 }
 function answerHTML(p, n, opts){ opts=opts||{}; const code=p.code?hl(p.code,p.lang):'';
   const sec=(label,body,cls)=>body?('<div class="sec '+(cls||'')+'"><div class="label">'+label+'</div>'+body+'</div>'):'';
@@ -637,7 +663,11 @@ function answerHTML(p, n, opts){ opts=opts||{}; const code=p.code?hl(p.code,p.la
 function bindNote(root){ root.querySelectorAll('.mynote').forEach(function(t){ t.onchange=function(){
   const id=t.dataset.id, o=Object.assign({},S.notes[id]||{}); o.my=t.value; writeDoc('notes',id,o); toast('Note saved'); }; }); }
 function flip(){ if(!R||R.flipped) return; R.flipped=true; const p=R.p, c=cardOf(p.id), n=noteOf(p);
-  $('#rv-body').innerHTML='<div class="qcard">'+head(p)+'<hr class="sep" style="margin:10px 0 14px">'+answerHTML(p,n)+'</div>';
+  const v = R.pick==null ? '' :
+    (R.pick===R.mcq.correct
+      ? '<p class="verdict ok" style="margin-bottom:12px">Correct, '+esc(R.mcq.correct)+'</p>'
+      : '<p class="verdict no" style="margin-bottom:12px">You said '+esc(R.pick)+'. It is '+esc(R.mcq.correct)+'.</p>');
+  $('#rv-body').innerHTML='<div class="qcard">'+head(p)+'<hr class="sep" style="margin:10px 0 14px">'+v+answerHTML(p,n)+'</div>';
   bar('<div class="rate">'+
     '<button class="again" data-r="1">Again<small>'+preview(c,1)+'</small></button>'+
     '<button class="hard" data-r="2">Hard<small>'+preview(c,2)+'</small></button>'+
@@ -718,7 +748,11 @@ async function answerDrill(btn, correct, p, n){
 document.addEventListener('keydown',function(e){
   if(e.target.matches('textarea,input,select')) return;
   if($('#sheet-bg').classList.contains('on')){ if(e.key==='Escape') closeSheet(); return; }
-  if(view==='review'&&R&&R.p){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); if(!R.flipped) flip(); } else if(/^[1-4]$/.test(e.key)&&R.flipped) rate(+e.key); }
+  if(view==='review'&&R&&R.p){
+    if(e.key===' '||e.key==='Enter'){ e.preventDefault(); if(!R.flipped) flip(); }
+    else if(/^[1-4]$/.test(e.key)){
+      if(R.flipped) rate(+e.key);
+      else if(R.mcq&&!R.pick){ const b=$$('#rv-opts .opt')[+e.key-1]; if(b) b.click(); } } }
   else if(view==='drill'&&D){ const nx=$('#dr-next');
     if((e.key===' '||e.key==='Enter')&&nx){ e.preventDefault(); nx.click(); }
     else if(/^[1-4]$/.test(e.key)){ const b=$$('#dr-opts .opt')[+e.key-1]; if(b&&!b.disabled) b.click(); } }

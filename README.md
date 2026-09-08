@@ -6,16 +6,17 @@ recognising patterns in problems you have *not* seen before.
 
 **Open it:** https://proga97.github.io/pattern-recall/
 
-Every card asks for the pattern and the key idea before it shows anything.
-The back gives you the signals that should have fired, what the constraint
-sizes imply, the approach, the pattern it is easy to confuse with, and your
-own accepted solution.
+Every card shows the statement and asks you to pick its pattern from four
+options before it reveals anything. The back opens with whether you were right,
+then gives the signals that should have fired, what the constraint sizes imply,
+the approach, the pattern it is easy to confuse with, and your own accepted
+solution.
 
 ## What is in it
 
 - **Today** — due count, new count, streak, a twelve week heatmap, weakest patterns.
-- **Review** — the spaced repetition queue, SM-2 with Anki style buttons.
-- **Spot the pattern** — a fast multiple choice drill on problem statements, weighted towards your weak patterns. This is the part that trains you for unseen problems.
+- **Review** — the spaced repetition queue. Each card is a multiple choice question on the pattern, then the full answer, then Anki style grading. Your answers feed the same pattern accuracy the drill uses.
+- **Spot the pattern** — the same question type as a standalone drill, ten in a row, weighted towards your weak patterns and not touching the review schedule.
 - **Library** — every problem and every pattern, with mastery bars.
 - **Playbook** — a constraint-size to complexity table, a phrase to pattern map, an opening checklist, and a code template plus classic bugs for each of 34 patterns.
 
