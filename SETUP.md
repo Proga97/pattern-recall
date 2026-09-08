@@ -1,96 +1,99 @@
-# Setting up Firebase sync, step by step
+# Setting up sync, step by step
 
-Your review history lives in a Firestore database on your own Google account.
-Every device that signs in with that account sees the same data, and changes
-appear on the other device within a second without a refresh.
+No account, no password, no sign-in screen. Your progress lives in a Firestore
+database on your own Google project, and devices are paired by a private link.
 
-There is no server to deploy and no key to paste. The Firebase config the page
-holds is public by design; what actually protects your data is the security
-rules in `firestore.rules`.
+Two console steps, then one tap in the app.
 
-## Step 1: create the project
+## Step 1: create the database
 
-Already done. The project is `leet-recall-861a3` and its config is baked into
-the build in `data/firebase.json`, so no device has to paste anything.
+1. Open your project at https://console.firebase.google.com. It is
+   `leet-recall-861a3`, and its config is already baked into the build.
+2. **Build**, **Firestore Database**, **Create database**. Pick a location near
+   you; it cannot be changed later. Start in **production mode**, which denies
+   everything until the rules are in.
+3. Open the **Rules** tab, replace what is there with the contents of
+   [firestore.rules](firestore.rules) from this repo, and **Publish**.
 
-That config is not a secret. It identifies the project, it does not grant
-access, and Firebase publishes it in every web app it generates. If you ever
-want a second layer, restrict the API key to your domain in the Google Cloud
-console under APIs and Services, Credentials, HTTP referrers.
-
-To point the app at a different project instead, replace `data/firebase.json`
-and rebuild, or paste another config under "Use a different project" in the
-Connect Firebase sheet.
-
-## Step 2: create the database
-
-1. In the left sidebar, **Build**, **Firestore Database**, **Create database**.
-2. Pick a location near you. This cannot be changed later.
-3. Start in **production mode**. That denies everything by default, which is
-   what you want before the rules are in.
-4. Open the **Rules** tab, delete what is there, paste the contents of
-   [firestore.rules](firestore.rules) from this repo, and click **Publish**.
-
-Those rules say one thing: a signed-in account may read and write documents
-under its own user id, and nothing else in the database is reachable by anyone.
-I tested them against the Firestore emulator, thirteen checks covering another
-account reading your data, a signed-out visitor reading or writing, and writes
-outside the user tree. All denied.
-
-## Step 3: turn on sign-in
+## Step 2: allow anonymous sign-in
 
 1. **Build**, **Authentication**, **Get started**.
-2. Choose **Google** in the provider list, enable it, pick a support email,
-   and save.
-3. Still in Authentication, open **Settings**, then **Authorized domains**, and
-   add `proga97.github.io`. Sign-in is refused from any domain not on that list.
+2. In the provider list choose **Anonymous**, enable it, save.
 
-## Step 4: connect the app
+That is the whole auth setup. Anonymous sign-in gives each device a throwaway
+session with no identity, no prompt and nothing to remember. You will never see
+a login screen. It exists so that every request carries a real Firebase session,
+which is what keeps the drive-by scanners out.
 
-Open https://proga97.github.io/pattern-recall/ then **Settings**,
-**Connect Firebase**, and press **Sign in with Google**. The project is already
-filled in, so there is nothing to paste.
+You do not need to touch Authorized domains. That list is for OAuth providers
+like Google, which this does not use.
 
-On your other device, do the same. Same Google account means the same data.
+## Step 3: turn on sync in the app
+
+Open https://proga97.github.io/pattern-recall/, then **Settings**,
+**Connect Firebase**, then **Start syncing on this device**. It shows you a
+link. Open that link on your phone and the two devices share the same data from
+then on. Nothing to type on the second device.
+
+**Save the link.** It is the only key to your history. Anyone who has it can
+read and change your progress, and losing it means losing the data.
+
+## How access is controlled
+
+There are three things standing between your data and a stranger.
+
+1. **A real session.** Every request must be signed in, even anonymously.
+   Unauthenticated reads and writes are refused outright, which stops the
+   automated scanners that trawl public repos for open Firestore databases.
+2. **An unguessable vault id.** Your data sits under 128 random bits generated
+   on your first device. That id is what the link carries. It is never committed
+   to this repo.
+3. **No way to go looking.** Listing vaults is denied, so an id cannot be
+   discovered by browsing. The rules also pin the shape: only the six documents
+   the app writes, and only the three fields it writes.
+
+I verified all of that against a real Firestore emulator. Seventeen checks:
+a second device with a different anonymous session reaches the same vault, a
+signed-out request is refused, a short vault id is refused, vaults cannot be
+listed, nothing outside the vault is reachable, stray fields and unknown
+document names are rejected.
+
+This is the same security model as a secret link. It is weaker than a real login
+in one specific way: anyone who gets the link gets in. It is stronger than the
+open database you asked about in every way, because that one would let anybody
+who found the project id wipe your history.
 
 ## How the syncing works
 
-- Each kind of data is its own document under `users/<your id>/data/`: cards,
-  notes, days, drill, extra, settings. Writing one cannot clobber a different
-  change on your other device.
+- Each kind of data is its own document under `vaults/<id>/data/`: cards, notes,
+  days, drill, extra, settings. Writing one cannot clobber a different change on
+  your other device.
 - Every card, note, day and drill score carries `_m`, the millisecond it was
-  last written. On a conflict the newer one wins. Deletes leave a tombstone with
-  a timestamp so a reset card does not come back from an older copy.
+  written. Newer wins. Deletes leave a timestamped tombstone so a reset card
+  does not come back from an older copy.
 - A live listener keeps both devices current, so this is push, not polling.
-- Firestore keeps an offline cache, so the app works on a train and the queued
-  writes go out when you reconnect.
-- Local storage is still written first, so nothing depends on the network.
+- Firestore caches offline, so the app works on a train and queued writes go out
+  when you reconnect.
+- Local storage is written first, so nothing waits on the network.
+- If one document is rejected, the others still go, and the failed one retries.
 
 ## If something breaks
 
 | Symptom | Cause |
 |---------|-------|
-| "This site is not in the Firebase authorized domains list" | Step 3.3. Add `proga97.github.io` exactly, no `https://`. |
-| "rules deny access" | The rules were not published, or were pasted into the wrong project. |
-| "Missing or insufficient permissions" in the console | Same as above. The rules tab should show the `users/{uid}/data/{docId}` block. |
-| The popup closes and nothing happens | Some browsers and installed apps block popups. The app falls back to a full-page redirect on its own; let it. |
-| Works on one device, not the other | Check you signed in with the same Google account. Different accounts get different user ids and therefore different data. |
+| "Turn on Anonymous sign-in..." | Step 2 is not done. |
+| "Firestore rules are rejecting this" | Step 1.3. The rules were not published, or the wrong project. |
+| Second device shows nothing | Check the whole link was copied, including everything after `#v=`. |
+| Amber dot, "saved on device" | No connection. Nothing is lost; it catches up. |
+| Lost the link | The data is unreachable. Start syncing again to make a new vault, and the old one just sits there. |
 
 ## Costs
 
-The free Spark plan covers this comfortably. A day of heavy studying is a few
+The free Spark plan covers this comfortably. A heavy day of studying is a few
 hundred reads and writes against a daily allowance in the tens of thousands.
 
 ## The alternative
 
 Settings also offers **Use a GitHub gist**, which keeps the same data in a
-secret gist on your GitHub account with no Google involvement and no project to
-create. It polls instead of pushing, so cross-device updates take a few seconds
-rather than being instant.
-
-## What was removed
-
-An earlier version synced through MongoDB Atlas with a small Vercel function in
-front, because a browser cannot speak MongoDB's wire protocol. Firestore talks
-to the browser directly, so that server piece is gone. It is still in the git
-history if you ever want it back.
+secret gist with no Google project at all. Same secret-link security model, but
+it polls instead of pushing.
