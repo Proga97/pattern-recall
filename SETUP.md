@@ -39,19 +39,32 @@ everyone else.
 
 ## How the syncing works
 
-- The whole state is one document at `users/me`: cards, notes, days, drill,
-  extra, settings.
-- Every card, note, day and drill score carries `_m`, the millisecond it was
-  written. On a conflict the newer one wins, so two devices can both make
-  changes without either being lost.
-- Deletes leave a timestamped tombstone, so a card you reset does not come back
-  from an older copy.
-- A live listener keeps devices current, so this is push, not polling.
+The data sits in top level collections, one document per thing:
+
+```
+cards/{problemId}     one document per card
+notes/{problemId}     one per note you edit
+days/{2026-09-08}     one per study day
+drill/{pattern-slug}  one per pattern, carrying its display name
+extra/{problemId}     problems you added by hand
+settings/main
+```
+
+- Two devices editing different cards never touch the same document, so neither
+  can overwrite the other. A delete is a real delete.
+- Every document carries `_m`, the millisecond it was written. On a conflict the
+  newer one wins.
+- Changes go up as one batched commit, so grading a card is a single round trip
+  covering both the card and the day counter.
+- A live listener on each collection keeps devices current. This is push, not
+  polling.
 - Firestore caches offline, so the app works with no connection and queued
   writes go out on reconnect.
-- Local storage is written first, so nothing ever waits on the network. If a
-  write is rejected the app keeps working and retries.
+- Local storage is written first, so nothing waits on the network. A rejected
+  write is retried and nothing is lost.
 
+Pattern names like "Heap / Priority Queue" cannot be document ids because of the
+slash, so drill documents are keyed by a slug and carry the real name inside.
 Review history is stored as `{t, r}` objects rather than `[t, r]` pairs, because
 Firestore rejects an array inside an array.
 

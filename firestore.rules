@@ -1,20 +1,23 @@
 rules_version = '2';
+
+// One user, so no user layer: the data sits in top level collections.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // A rule on /users/{userId} does NOT cover /users/{userId}/cards/{id}.
-    // Firestore rules never cascade into subcollections, so the nested match
-    // below is what makes cards, notes, days, drill and extra readable.
+    match /cards/{id}    { allow read, write: if true; }   // one document per card
+    match /notes/{id}    { allow read, write: if true; }
+    match /days/{id}     { allow read, write: if true; }   // keyed by date
+    match /drill/{id}    { allow read, write: if true; }   // keyed by pattern slug
+    match /extra/{id}    { allow read, write: if true; }   // problems added by hand
+    match /settings/{id} { allow read, write: if true; }
+
+    match /tasks/{id}    { allow read, write: if true; }
+
+    // Only so the app can move data out of the old users/me layout and delete
+    // it. Once your console shows no users collection, this block can go.
     match /users/{userId} {
       allow read, write: if true;
-
-      match /{sub}/{docId} {
-        allow read, write: if true;
-      }
-    }
-
-    match /tasks/{taskId} {
-      allow read, write: if true;
+      match /{sub}/{docId} { allow read, write: if true; }
     }
   }
 }

@@ -414,13 +414,13 @@ function pushSoon(){ pushPending=true; clearTimeout(pushTimer); pushTimer=setTim
 async function remoteSync(force){ if(mode==='gist') return gistSync(force); if(mode==='firebase') return fbFlush(); }
 
 /* ---------- Firebase sync ---------- */
-// Proper Firestore shape, one document per thing:
-//   users/me                      settings and a heartbeat
-//   users/me/cards/{problemId}    one document per card
-//   users/me/notes/{problemId}
-//   users/me/days/{YYYY-MM-DD}
-//   users/me/drill/{patternSlug}  carries name, since ids cannot hold "/"
-//   users/me/extra/{problemId}    problems added by hand
+// One user, so no user layer. Top level collections, one document per thing:
+//   cards/{problemId}     one document per card
+//   notes/{problemId}
+//   days/{YYYY-MM-DD}
+//   drill/{patternSlug}   carries name, since ids cannot hold "/"
+//   extra/{problemId}     problems added by hand
+//   settings/main
 // Two devices editing different cards never touch the same document, so
 // neither can clobber the other, and a delete is a real delete.
 const FB_VER='11.3.1';
@@ -451,8 +451,8 @@ function fbInit(cfg){
   }
   return fbApp;
 }
-function fbUserRef(){ return fbDb.collection('users').doc(FB_DOC); }
-function fbSub(c){ return fbUserRef().collection(c); }
+function fbSub(c){ return fbDb.collection(c); }
+function fbSettingsRef(){ return fbDb.collection('settings').doc('main'); }
 // Pattern names contain "/" and spaces, which a document id cannot, so the
 // drill collection is keyed by a slug and carries the real name inside.
 function fbIdFor(coll, key){ return coll==='drill' ? slug(key) : key; }
@@ -475,7 +475,7 @@ async function fbFlush(){
     let n=0;
     for(const c of colls){
       for(const id in q[c]){
-        if(c==='settings'){ batch.set(fbUserRef(), {settings:S.settings, _m:S.settings._m||Date.now()}, {merge:true}); n++; continue; }
+        if(c==='settings'){ batch.set(fbSettingsRef(), Object.assign({}, S.settings, {_m:S.settings._m||Date.now()})); n++; continue; }
         const ref=fbSub(c).doc(fbIdFor(c,id));
         if(q[c][id]==='del'){ batch.delete(ref); n++; }
         else { const v=S[c][id]; if(v){ batch.set(ref, v); n++; } }
@@ -511,10 +511,10 @@ function fbWatch(){
       lastSync=Date.now(); LS.set('lastsync',lastSync); setSync('ok','synced');
     }, function(){ setSync('local','sync unavailable'); }));
   });
-  fbUnsub.push(fbUserRef().onSnapshot(function(doc){
+  fbUnsub.push(fbSettingsRef().onSnapshot(function(doc){
     const d=doc.exists?doc.data():null;
-    if(d && d.settings && (d.settings._m||0) > (S.settings._m||0)){
-      Object.assign(S.settings, d.settings); LS.set('settings',S.settings); render(); }
+    if(d && (d._m||0) > (S.settings._m||0)){
+      Object.assign(S.settings, d); LS.set('settings',S.settings); render(); }
   }, function(){}));
 }
 function fbErr(e){
@@ -522,6 +522,43 @@ function fbErr(e){
   if(/permission|insufficient/i.test(c)) return 'Firestore rules are rejecting this';
   if(/unavailable|network|offline/i.test(c)) return 'Cannot reach Firebase right now';
   return (e&&e.message)||'Sync failed';
+}
+// Earlier versions nested everything under users/me, first as maps on that one
+// document and then as subcollections beneath it. Move whatever is there up to
+// the top level, then delete the old document so nothing is left behind.
+async function fbMigrate(){
+  let moved=false;
+  const oldUser=fbDb.collection('users').doc(FB_DOC);
+  let u=null;
+  try{ u=await oldUser.get(); }catch(e){ return false; }   // rules may already deny it
+  if(!u || !u.exists) return false;
+  const ud=u.data()||{};
+  COLL.forEach(function(c){
+    const m=ud[c];
+    if(m && typeof m==='object' && !Array.isArray(m)){
+      for(const id in m){ const v=m[id];
+        if(v && typeof v==='object'){ moved=true; fbTake(c,id,v); fbQueue(c,id,'set'); } }
+    }
+  });
+  if(ud.settings && (ud.settings._m||0) > (S.settings._m||0)){
+    Object.assign(S.settings, ud.settings); LS.set('settings',S.settings);
+    fbQueue('settings','main','set'); moved=true; }
+  // and any documents written under the subcollection layout
+  for(const c of COLL){
+    try{
+      const sub=await oldUser.collection(c).get();
+      for(const doc of sub.docs){
+        const data=doc.data(), key=fbKeyFor(c, doc.id, data);
+        moved=true; fbTake(c, key, data); fbQueue(c, key, 'set');
+        try{ await doc.ref.delete(); }catch(e){}
+      }
+    }catch(e){}
+  }
+  await fbFlush();
+  try{ fbSelfWrite=Date.now(); await oldUser.delete(); }
+  catch(e){ console.warn('could not remove the old users document:', e && e.message); }
+  if(moved) COLL.forEach(saveLocal);
+  return moved;
 }
 async function fbStart(){
   const cfg=FB_DEFAULT; if(!cfg) return false;
@@ -538,31 +575,12 @@ async function fbStart(){
     for(const id in S[c]) if(!seen[id]) fbQueue(c, id, 'set');
     saveLocal(c);
   }
-  const u=await fbUserRef().get();
-  const ud=u.exists?(u.data()||{}):{};
-  // Migration: an earlier version kept everything as maps on this one document.
-  // Move any of that into the subcollections, then strip the old fields.
-  let legacy=false;
-  COLL.forEach(function(c){
-    const m=ud[c];
-    if(m && typeof m==='object' && !Array.isArray(m)){
-      for(const id in m){ const v=m[id];
-        if(v && typeof v==='object'){ legacy=true; if(fbTake(c,id,v)) changed=true; fbQueue(c,id,'set'); } }
-      if(Object.keys(m).length===0) legacy=true;
-    }
-  });
-  const rs=ud.settings;
+  const sd=await fbSettingsRef().get();
+  const rs=sd.exists?sd.data():null;
   if(rs && (rs._m||0) > (S.settings._m||0)){ Object.assign(S.settings, rs); LS.set('settings',S.settings); changed=true; }
   else if(!rs || (S.settings._m||0) > (rs._m||0)) fbQueue('settings','main','set');
+  if(await fbMigrate()) changed=true;
   await fbFlush();
-  if(legacy){
-    try{
-      const del=firebase.firestore.FieldValue.delete(), strip={};
-      COLL.concat(['tomb','v','_w']).forEach(function(k){ if(k in ud) strip[k]=del; });
-      if(Object.keys(strip).length){ fbSelfWrite=Date.now(); await fbUserRef().update(strip); }
-      COLL.forEach(saveLocal);
-    }catch(e){ console.warn('could not clean up the old layout:', e && e.message); }
-  }
   lastSync=Date.now(); LS.set('lastsync',lastSync); setSync('ok','synced');
   fbWatch(); if(changed) render();
   return true;
