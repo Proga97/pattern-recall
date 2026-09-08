@@ -1,41 +1,11 @@
 rules_version = '2';
-
-// Pattern Recall.
-//
-// There is no sign-in screen. The app signs in anonymously in the background,
-// which costs the user nothing but means every request carries a real Firebase
-// session. That alone blocks the drive-by scanners that trawl public repos for
-// open databases.
-//
-// Data lives under a vault id: 128 random bits generated on the first device
-// and carried to the others by a link. Knowing the id is what grants access,
-// exactly like a secret gist. It is never committed to this repo, and vaults
-// cannot be listed, so an id cannot be discovered by browsing.
-//
-// Note on size limits: rules cannot measure a document's bytes. size() on a
-// document returns its field count, not its length, so a byte guard here would
-// be theatre. Firestore's own 1 MB per document cap is the real limit. What
-// this file does instead is pin the shape: only the six documents the app
-// writes, and only the three fields it writes.
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function goodVault(vaultId) {
-      // an id shorter than this would be worth guessing at
-      return request.auth != null && vaultId.size() >= 24;
+    match /users/{userId} {
+      allow read, write: if true;
     }
-
-    match /vaults/{vaultId}/data/{docId} {
-      allow read, delete: if goodVault(vaultId);
-
-      allow create, update: if goodVault(vaultId)
-        && docId in ['cards', 'notes', 'extra', 'days', 'drill', 'settings']
-        && request.resource.data.keys().hasOnly(['items', 'tomb', '_w']);
-    }
-
-    // No listing vaults, and nothing else in the database is reachable.
-    match /{document=**} {
-      allow read, write: if false;
+    match /tasks/{taskId} {
+      allow read, write: if true;
     }
   }
 }

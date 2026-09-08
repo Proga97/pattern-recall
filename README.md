@@ -25,10 +25,11 @@ solution.
 The page is one static HTML file with no build step. It offers two ways to sync,
 and works without either.
 
-**Firebase.** A Firestore database on your own Google project. No account, no
-sign-in screen: the app signs in anonymously and pairs devices with a private
-link. Updates push instead of polling. Walkthrough in [SETUP.md](SETUP.md),
-rules in [firestore.rules](firestore.rules).
+**Firebase.** A Firestore database on your own Google project, one document at
+`users/me`. No account, no sign-in, no setup: open the page on any device and it
+syncs. The rules are open, so anyone who opens the public page shares the same
+progress. Walkthrough in [SETUP.md](SETUP.md), rules in
+[firestore.rules](firestore.rules).
 
 **A GitHub gist.** No server at all. Settings, Connect GitHub, paste a
 fine-grained token with only the Gists permission, and the page creates a secret
