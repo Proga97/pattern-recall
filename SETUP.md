@@ -71,14 +71,21 @@ settings/main
   can overwrite the other. A delete is a real delete.
 - Every document carries `_m`, the millisecond it was written. On a conflict the
   newer one wins.
-- Changes go up as one batched commit, so grading a card is a single round trip
-  covering both the card and the day counter.
+- Changes go up as batched commits, sliced at 450 operations because Firestore
+  rejects a batch over 500. Grading a card is a single round trip covering both
+  the card and the day counter.
 - A live listener on each collection keeps devices current. This is push, not
   polling.
 - Firestore caches offline, so the app works with no connection and queued
   writes go out on reconnect.
-- Local storage is written first, so nothing waits on the network. A rejected
-  write is retried and nothing is lost.
+- Firestore is the source of truth. On every start the app takes what the server
+  holds and drops anything local the server does not have, so deleting a
+  document in the console stays deleted.
+- Local storage is a cache so the page paints instantly and still works with
+  sync switched off. It never repopulates the server.
+- Writes made offline sit in the Firestore queue and go out on reconnect, and a
+  snapshot served from that cache never triggers pruning, so going offline
+  costs nothing.
 
 Pattern names like "Heap / Priority Queue" cannot be document ids because of the
 slash, so drill documents are keyed by a slug and carry the real name inside.

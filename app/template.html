@@ -547,64 +547,37 @@ function fbErr(e){
   if(/unavailable|network|offline/i.test(c)) return 'Cannot reach Firebase right now';
   return (e&&e.message)||'Sync failed';
 }
-// Earlier versions nested everything under users/me, first as maps on that one
-// document and then as subcollections beneath it. Move whatever is there up to
-// the top level, then delete the old document so nothing is left behind.
-async function fbMigrate(){
-  let moved=false;
-  const oldUser=fbDb.collection('users').doc(FB_DOC);
-  let u=null;
-  try{ u=await oldUser.get(); }catch(e){ return false; }   // rules may already deny it
-  if(!u || !u.exists) return false;
-  const ud=u.data()||{};
-  COLL.forEach(function(c){
-    const m=ud[c];
-    if(m && typeof m==='object' && !Array.isArray(m)){
-      for(const id in m){ const v=m[id];
-        if(v && typeof v==='object'){ moved=true; fbTake(c,id,v); fbQueue(c,id,'set'); } }
-    }
-  });
-  if(ud.settings && (ud.settings._m||0) > (S.settings._m||0)){
-    Object.assign(S.settings, ud.settings); LS.set('settings',S.settings);
-    fbQueue('settings','main','set'); moved=true; }
-  // and any documents written under the subcollection layout
-  for(const c of COLL){
-    try{
-      const sub=await oldUser.collection(c).get();
-      for(const doc of sub.docs){
-        const data=doc.data(), key=fbKeyFor(c, doc.id, data);
-        moved=true; fbTake(c, key, data); fbQueue(c, key, 'set');
-        try{ await doc.ref.delete(); }catch(e){}
-      }
-    }catch(e){}
-  }
-  await fbFlush();
-  try{ fbSelfWrite=Date.now(); await oldUser.delete(); }
-  catch(e){ console.warn('could not remove the old users document:', e && e.message); }
-  if(moved) COLL.forEach(saveLocal);
-  return moved;
-}
 async function fbStart(){
   const cfg=FB_DEFAULT; if(!cfg) return false;
   await fbLoad(); fbInit(cfg);
   mode='firebase'; setSync('','syncing');
   let changed=false;
-  // pull every subcollection, then push anything this device holds that is
-  // newer or missing upstream, so a device that studied offline uploads it
+  // Firestore is the source of truth. Whatever it holds is what this device
+  // holds: anything here that is not there is dropped, so deleting a document
+  // in the console stays deleted instead of being re-uploaded on the next
+  // start. Local storage is a cache for painting the page instantly, not a
+  // second opinion.
+  //
+  // The one exception is a snapshot served from the offline cache. That is not
+  // evidence the server lacks anything, so nothing is pruned. Writes made
+  // while offline sit in the Firestore queue and go out on reconnect.
   for(const c of COLL){
     const snap=await fbSub(c).get();
+    const authoritative = !snap.metadata.fromCache;
     const seen={};
     snap.forEach(function(doc){ const data=doc.data(), key=fbKeyFor(c, doc.id, data);
-      seen[key]=1; if(fbTake(c, key, data)) changed=true; });
-    for(const id in S[c]) if(!seen[id]) fbQueue(c, id, 'set');
+      seen[key]=1;
+      const mine=S[c][key];
+      if(!mine || JSON.stringify(mine)!==JSON.stringify(data)){ S[c][key]=data; changed=true; } });
+    if(authoritative){
+      for(const id in S[c]) if(!seen[id]){ delete S[c][id]; changed=true; }
+    }
     saveLocal(c);
   }
   const sd=await fbSettingsRef().get();
-  const rs=sd.exists?sd.data():null;
-  if(rs && (rs._m||0) > (S.settings._m||0)){ Object.assign(S.settings, rs); LS.set('settings',S.settings); changed=true; }
-  else if(!rs || (S.settings._m||0) > (rs._m||0)) fbQueue('settings','main','set');
-  if(await fbMigrate()) changed=true;
-  await fbFlush();
+  if(sd.exists){ const rs=sd.data();
+    if(JSON.stringify(rs)!==JSON.stringify(S.settings)){ Object.assign(S.settings, rs); LS.set('settings',S.settings); changed=true; } }
+  else if(!sd.metadata.fromCache){ fbQueue('settings','main','set'); await fbFlush(); }
   lastSync=Date.now(); LS.set('lastsync',lastSync); setSync('ok','synced');
   fbWatch(); if(changed) render();
   return true;
