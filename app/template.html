@@ -597,11 +597,6 @@ async function fbStart(){
   fbWatch(); if(changed) render();
   return true;
 }
-async function fbPushEverything(){
-  for(const c of COLL) for(const id in S[c]) fbQueue(c, id, 'set');
-  fbQueue('settings','main','set');
-  await fbFlush();
-}
 function fbStop(){
   fbUnsub.forEach(function(u){ try{ u(); }catch(e){} }); fbUnsub=[];
   mode = (GH.token&&GH.gist)?'gist':(db?'db':'local');
@@ -1234,9 +1229,8 @@ function renderSettings(){
     c.innerHTML='<span class="label">Sync</span>'+
       '<p class="small" style="margin:0">Syncing to <span class="mono">'+esc((FB_DEFAULT&&FB_DEFAULT.projectId)||'')+'</span>. Every device that opens this page shares the same progress, with nothing to set up.</p>'+
       '<div class="row wrap small faint" style="gap:14px"><span>last synced '+ago(lastSync)+'</span></div>'+
-      '<div class="row wrap"><button class="btn sm" id="sync-now">Sync now</button><button class="btn sm ghost" id="sync-off">Stop syncing here</button></div>'+
-      '<p class="small faint" style="margin:0">The database is open, so anyone who opens this page can read and change this progress.</p>';
-    $('#sync-now').onclick=async function(){ await fbPushEverything(); toast('Synced'); renderSettings(); };
+      '<div class="row wrap"><button class="btn sm ghost" id="sync-off">Stop syncing here</button></div>'+
+      '<p class="small faint" style="margin:0">Changes save as you make them and land on your other devices straight away. The database is open, so anyone who opens this page can read and change this progress.</p>';
     $('#sync-off').onclick=function(){ if(!confirm('Stop syncing on this device? Your data stays in Firebase.')) return;
       FB_OFF.on=false; fbStop(); toast('Stopped'); renderSettings(); };
   } else if(mode==='gist'){
