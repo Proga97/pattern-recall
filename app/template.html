@@ -1149,6 +1149,9 @@ function openSyncSetup(){
     catch(e){ toast(e.message||'Could not connect'); btn.disabled=false; btn.textContent='Connect'; }
   };
 }
+/* ---------- playbook ---------- */
+let pbMode='cheat';
+$$('.seg button[data-pb]').forEach(b=>b.onclick=function(){ pbMode=b.dataset.pb; $$('.seg button[data-pb]').forEach(x=>x.classList.toggle('on',x===b)); renderPlaybook(); });
 function playbookBody(pb){
   return '<div class="stack" style="gap:14px">'+
     '<p class="stmt" style="color:var(--ink)">'+esc(pb.one_liner)+'</p>'+
