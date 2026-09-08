@@ -22,19 +22,23 @@ solution.
 
 ## Where your progress lives
 
-Nothing runs on a server. The page is one static HTML file.
+The page is one static HTML file with no build step. It offers two ways to sync,
+and works without either.
 
-Progress syncs through a **secret gist on your own GitHub account**. On the
-first device, Settings then Connect GitHub, paste a fine-grained token with
-only the Gists permission, and the page creates the gist. On the next device,
-paste the same token plus the gist id. The token is kept in that browser's
-local storage and is sent only to `api.github.com`.
+**MongoDB.** Your own Atlas cluster, reached through a small endpoint in `api/`
+that holds the connection string. A browser cannot call MongoDB directly, so
+this piece is required. Full walkthrough in [SETUP.md](SETUP.md).
 
-Writes go to local storage first and the gist second, so the app keeps working
-offline and catches up later. Merges are per document, newest write wins, with
-tombstones so a delete on one device does not come back from another.
+**A GitHub gist.** No server at all. Settings, Connect GitHub, paste a
+fine-grained token with only the Gists permission, and the page creates a secret
+gist. On the next device paste the same token plus the gist id.
 
-If you never connect GitHub, everything still works and stays on one device.
+Either way, writes go to local storage first and the network second, so the app
+keeps working offline and catches up later. Merges are per document, newest
+write wins, with tombstones so a delete on one device does not come back from
+another.
+
+If you connect neither, everything still works and stays on one device.
 
 ## Building it yourself
 
@@ -56,6 +60,7 @@ directly works too, but a `file://` page gets no service worker.
 | `data/playbook.json` | The 34 pattern templates. |
 | `app/template.html` | App source, no framework, no build step. |
 | `scripts/build_app.py` | Merges data into the template, writes `docs/` and `dist/`. |
+| `api/progress.js` | The sync endpoint. Deployed to Vercel, not to Pages. |
 | `docs/` | Generated. Built by CI and uploaded to Pages. Not in git. |
 | `dist/index.html` | Generated. The same page as a Claude Artifact fragment. Not in git. |
 
