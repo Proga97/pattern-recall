@@ -790,5 +790,335 @@
       "240. Search a 2D Matrix II",
       "289. Game of Life"
     ]
+  },
+  {
+    "name": "Graph",
+    "one_liner": "Model entities as nodes and relations as edges, build an adjacency list, then pick the traversal that matches the question (BFS for hops, DFS for structure, Dijkstra for weights).",
+    "use_when": [
+      "Input is edges, prerequisites, flights, equations, or any pairwise relation list",
+      "The question is reachability, connectivity, cycles, components, or shortest path",
+      "A grid, a word list, or a set of states has implicit edges you can generate on demand",
+      "'Can you get from A to B' or 'how many groups are there'",
+      "Weighted routes with costs, stops, or time limits"
+    ],
+    "avoid_when": "The relation is a strict hierarchy already given as a tree with parent pointers - tree recursion is simpler, and building an adjacency list adds a visited set you do not need.",
+    "template": "from collections import defaultdict, deque\n\ndef build_graph(n, edges, directed=False):\n    g = defaultdict(list)\n    for u, v, *rest in edges:            # rest holds a weight if present\n        w = rest[0] if rest else 1\n        g[u].append((v, w))\n        if not directed:                 # KNOB: directed vs undirected\n            g[v].append((u, w))\n    return g\n\ndef components(n, g):\n    seen = set()\n    count = 0\n    for s in range(n):                   # KNOB: iterate ALL nodes; graph may be disconnected\n        if s in seen:\n            continue\n        count += 1\n        q = deque([s])\n        seen.add(s)\n        while q:\n            u = q.popleft()\n            for v, _ in g[u]:\n                if v not in seen:\n                    seen.add(v)\n                    q.append(v)\n    return count",
+    "knobs": [
+      "Directed vs undirected (undirected needs both edge insertions and a parent check for cycles)",
+      "Adjacency list vs matrix vs implicit neighbor generation for state-space graphs",
+      "Which traversal: BFS (fewest edges), DFS (structure/cycles), Dijkstra (positive weights), Bellman-Ford (negatives or a hop limit)",
+      "Node labels: 0..n-1 integers vs arbitrary hashable keys (dict-backed adjacency)"
+    ],
+    "complexity": "O(V + E) for BFS/DFS; O(E log V) for Dijkstra; O(V + E) space for the adjacency list.",
+    "pitfalls": [
+      "Starting only from node 0 and missing other components",
+      "Adding only one direction for an undirected edge",
+      "Cycle detection in an undirected graph that flags the edge back to the parent",
+      "Using BFS on a weighted graph and reporting the wrong shortest distance"
+    ],
+    "canonical": [
+      "133. Clone Graph",
+      "207. Course Schedule",
+      "323. Number of Connected Components in an Undirected Graph",
+      "743. Network Delay Time",
+      "787. Cheapest Flights Within K Stops"
+    ]
+  },
+  {
+    "name": "Union-Find",
+    "one_liner": "Maintain disjoint sets under merges with near-constant find/union via path compression and union by rank, answering 'same group?' online.",
+    "use_when": [
+      "Edges arrive incrementally and you must count components or test connectivity as you go",
+      "Detecting whether adding an edge creates a cycle in an undirected graph",
+      "Kruskal's minimum spanning tree, or accounts/emails/equation merging",
+      "Grouping by an equivalence relation (same string, same coordinate line, redundant connection)",
+      "The problem is 'connected components' but a DFS would be re-run after every update"
+    ],
+    "avoid_when": "You need to split groups or undo a union, or you need actual path information between nodes - DSU only merges and knows membership, not paths.",
+    "template": "class DSU:\n    def __init__(self, n):\n        self.parent = list(range(n))\n        self.rank = [0] * n\n        self.count = n                  # number of disjoint sets\n\n    def find(self, x):\n        while self.parent[x] != x:\n            self.parent[x] = self.parent[self.parent[x]]   # path compression\n            x = self.parent[x]\n        return x\n\n    def union(self, a, b):\n        ra, rb = self.find(a), self.find(b)\n        if ra == rb:\n            return False                # already together -> this edge closes a cycle\n        if self.rank[ra] < self.rank[rb]:\n            ra, rb = rb, ra             # attach the smaller tree under the larger\n        self.parent[rb] = ra\n        if self.rank[ra] == self.rank[rb]:\n            self.rank[ra] += 1\n        self.count -= 1\n        return True",
+    "knobs": [
+      "Integer-indexed arrays vs a dict-backed parent map for arbitrary keys",
+      "Union by rank/size vs plain union (needed to keep the near-O(1) bound)",
+      "Extra per-root payload: component size, sum, or a weight for weighted DSU (equation ratios)",
+      "Whether union's return value (merged or not) is the answer, as in cycle detection"
+    ],
+    "complexity": "O(alpha(n)) amortized per operation, effectively constant; O(n) space.",
+    "pitfalls": [
+      "Setting parent[b] = a instead of parent[find(b)] = find(a), corrupting the forest",
+      "Omitting path compression or union by rank and degrading to O(n) chains",
+      "Decrementing the component count even when both nodes were already joined",
+      "Mapping non-integer labels inconsistently, so the same entity gets two ids"
+    ],
+    "canonical": [
+      "547. Number of Provinces",
+      "684. Redundant Connection",
+      "323. Number of Connected Components in an Undirected Graph",
+      "721. Accounts Merge",
+      "1584. Min Cost to Connect All Points"
+    ]
+  },
+  {
+    "name": "Topological Sort",
+    "one_liner": "Order the nodes of a DAG so every edge points forward, by repeatedly emitting nodes whose remaining in-degree is zero.",
+    "use_when": [
+      "Dependencies or prerequisites must be satisfied before an item can be taken",
+      "You need any valid ordering, or to detect that no ordering exists (a cycle)",
+      "Build order, course schedule, task scheduling, or recipe/ingredient ordering",
+      "An alien alphabet or ranking must be reconstructed from pairwise ordering constraints",
+      "DP over a DAG where states must be processed in dependency order"
+    ],
+    "avoid_when": "The graph is undirected or may contain cycles that are legitimate (not an error) - topological order is undefined there; use components or SCC decomposition instead.",
+    "template": "from collections import defaultdict, deque\n\ndef topo_sort(n, edges):\n    g = defaultdict(list)\n    indeg = [0] * n\n    for u, v in edges:                # KNOB: edge direction u -> v means u BEFORE v\n        g[u].append(v)\n        indeg[v] += 1\n    q = deque(i for i in range(n) if indeg[i] == 0)   # all zero-indegree starts\n    order = []\n    while q:\n        u = q.popleft()               # KNOB: heap instead for lexicographically smallest\n        order.append(u)\n        for v in g[u]:\n            indeg[v] -= 1\n            if indeg[v] == 0:\n                q.append(v)\n    if len(order) != n:\n        return []                     # a cycle: some nodes never reached in-degree 0\n    return order",
+    "knobs": [
+      "Edge direction convention (prerequisite pairs are often given reversed)",
+      "Kahn's BFS with in-degrees vs DFS with a three-color state and a reversed post-order",
+      "deque (any valid order) vs heap (lexicographically smallest order)",
+      "Whether you also need the level/round count (batched BFS gives minimum semesters)"
+    ],
+    "complexity": "O(V + E) time, O(V + E) space.",
+    "pitfalls": [
+      "Reversing the edge direction, producing a valid-looking but backwards order",
+      "Forgetting the len(order) != n cycle check and returning a partial order",
+      "Seeding the queue with only one zero-in-degree node",
+      "Decrementing in-degree more than once for duplicate edges"
+    ],
+    "canonical": [
+      "207. Course Schedule",
+      "210. Course Schedule II",
+      "269. Alien Dictionary",
+      "310. Minimum Height Trees",
+      "1136. Parallel Courses"
+    ]
+  },
+  {
+    "name": "Sorting",
+    "one_liner": "Impose an order that makes the answer adjacent, monotone, or greedily obvious, usually via a custom key or comparator.",
+    "use_when": [
+      "Grouping equal or related items so they land next to each other",
+      "A two-pointer, greedy, or binary search step requires sorted input",
+      "Ranking by multiple criteria (custom key tuple, or a pairwise comparator)",
+      "Detecting duplicates, gaps, or the largest difference between neighbors",
+      "The output itself must be in a specified order"
+    ],
+    "avoid_when": "Only the k-th element or the top k matter with k much smaller than n, or the values are small integers - a heap, quickselect, or counting sort beats O(n log n).",
+    "template": "from functools import cmp_to_key\n\ndef sort_variants(items):\n    items.sort()                                    # in place, stable\n    by_key = sorted(items, key=lambda x: (x[1], -x[0]))   # KNOB: multi-key, - reverses numerics\n    def cmp(a, b):                                  # KNOB: comparator when the rule is pairwise\n        if a + b > b + a:\n            return -1                               # a comes first\n        if a + b < b + a:\n            return 1\n        return 0\n    by_cmp = sorted(map(str, items), key=cmp_to_key(cmp))\n    return by_key, by_cmp\n\ndef counting_sort(nums, k):\n    cnt = [0] * (k + 1)                             # values in 0..k\n    for x in nums:\n        cnt[x] += 1\n    out = []\n    for v, c in enumerate(cnt):\n        out.extend([v] * c)                         # O(n + k), beats n log n for small k\n    return out",
+    "knobs": [
+      "key= tuple (fast, must be a total order) vs cmp_to_key (pairwise rules like 'largest number')",
+      "Ascending vs descending, and how to reverse only one component of a key tuple",
+      "Stability: does the original relative order of equal keys matter",
+      "Comparison sort vs counting/bucket/radix sort when the value range is small"
+    ],
+    "complexity": "O(n log n) for Timsort, O(n) extra space worst case; O(n + k) for counting sort.",
+    "pitfalls": [
+      "Using reverse=True with a tuple key when only one component should be reversed",
+      "Sorting when the problem needs the original indices (sort the indices instead)",
+      "sorted() returning a new list while .sort() returns None (assigning None by mistake)",
+      "cmp_to_key returning a bool instead of -1/0/1"
+    ],
+    "canonical": [
+      "912. Sort an Array",
+      "179. Largest Number",
+      "56. Merge Intervals",
+      "75. Sort Colors",
+      "1051. Height Checker"
+    ]
+  },
+  {
+    "name": "Design",
+    "one_liner": "Compose two or more data structures so every required operation hits its target complexity, usually a hash map for O(1) lookup plus something ordered for O(1) or O(log n) eviction.",
+    "use_when": [
+      "The problem says 'Design X' or 'Implement a class' with per-method complexity targets",
+      "You need O(1) get and put with an eviction policy (LRU, LFU)",
+      "A stream must answer running queries (median, moving average, top k, rate limiting)",
+      "Iterator design: flatten a nested list, peek ahead, or zigzag two lists",
+      "Randomized O(1) insert/delete/getRandom"
+    ],
+    "avoid_when": "A single built-in structure already meets every stated bound - inventing a composite adds bugs and interview time for no gain.",
+    "template": "class DesignSkeleton:\n    def __init__(self, capacity):\n        self.cap = capacity\n        self.index = {}          # KNOB: key -> node/position, gives O(1) lookup\n        self.order = []          # KNOB: the ordering/eviction structure (list, dll, heap)\n\n    def get(self, key):\n        if key not in self.index:\n            return -1\n        self._touch(key)         # keep the invariant on every access, not just writes\n        return self.index[key]\n\n    def put(self, key, value):\n        if key in self.index:\n            self.index[key] = value\n            self._touch(key)\n            return\n        if len(self.index) >= self.cap:\n            victim = self._evict()          # KNOB: the eviction policy\n            del self.index[victim]\n        self.index[key] = value\n        self.order.append(key)\n\n    def _touch(self, key):\n        self.order.remove(key)              # O(n) here; a doubly linked list makes it O(1)\n        self.order.append(key)\n\n    def _evict(self):\n        return self.order.pop(0)",
+    "knobs": [
+      "Which pair of structures: hash map + doubly linked list (LRU), map + heap, list + index map (O(1) random)",
+      "Where the invariant is restored (on every access vs lazily at query time)",
+      "Sentinel head/tail nodes to remove linked-list edge cases",
+      "Whether stale entries are deleted eagerly or skipped lazily on read"
+    ],
+    "complexity": "Target is usually O(1) amortized per operation, O(log n) when a heap or sorted structure is required; O(capacity) space.",
+    "pitfalls": [
+      "Using list.remove / pop(0), which is O(n) and misses the stated O(1) bound",
+      "Updating one structure and forgetting the mirror update in the other",
+      "Missing linked-list edge cases at the head/tail (fix with sentinels)",
+      "Not refreshing recency on get, only on put"
+    ],
+    "canonical": [
+      "146. LRU Cache",
+      "155. Min Stack",
+      "380. Insert Delete GetRandom O(1)",
+      "295. Find Median from Data Stream",
+      "208. Implement Trie (Prefix Tree)"
+    ]
+  },
+  {
+    "name": "String",
+    "one_liner": "Exploit the small alphabet and the immutability of Python strings: count characters, canonicalize, or scan with indices, building output in a list and joining once.",
+    "use_when": [
+      "Anagrams, palindromes, character frequency, or case/whitespace normalization",
+      "Parsing tokens, versions, paths, expressions, or delimited input",
+      "Substring search, pattern matching, or expand-around-center problems",
+      "Encoding/decoding, run-length compression, or serialization with a delimiter",
+      "Comparisons that need a canonical form (sorted letters, a count signature)"
+    ],
+    "avoid_when": "The task is really a sliding-window, DP, or trie problem wearing string clothing - raw character scanning then hides the structure that gives the efficient solution.",
+    "template": "from collections import Counter\n\ndef normalize(s):\n    return ''.join(ch.lower() for ch in s if ch.isalnum())   # KNOB: the canonical form\n\ndef is_anagram(a, b):\n    return Counter(a) == Counter(b)          # KNOB: Counter vs sorted() vs a 26-int array\n\ndef build_output(parts):\n    out = []                                  # NEVER s += ch in a loop: O(n^2)\n    for p in parts:\n        out.append(str(p))\n    return ''.join(out)\n\ndef expand_around_center(s):\n    best = \"\"\n    for i in range(len(s)):\n        for l, r in ((i, i), (i, i + 1)):     # odd and even length centers\n            while l >= 0 and r < len(s) and s[l] == s[r]:\n                l -= 1\n                r += 1\n            cand = s[l + 1:r]                 # l,r are one past the valid range\n            if len(cand) > len(best):\n                best = cand\n    return best",
+    "knobs": [
+      "The canonical signature: sorted string, Counter, or a fixed 26-length tuple (hashable, fastest)",
+      "Index scanning vs split/regex parsing vs an explicit state machine",
+      "Whether case, whitespace, punctuation, and Unicode matter",
+      "Building with a list plus join vs slicing (slices copy, so watch O(n^2))"
+    ],
+    "complexity": "O(n) for a single scan, O(n log n) if you sort each string, O(n^2) for expand-around-center; O(n) space.",
+    "pitfalls": [
+      "Concatenating in a loop, turning an O(n) scan into O(n^2)",
+      "Off-by-one after expand-around-center (the answer is s[l+1:r])",
+      "Using a list as a dict key for the anagram signature instead of a tuple",
+      "Forgetting a delimiter that cannot appear in the data when serializing"
+    ],
+    "canonical": [
+      "242. Valid Anagram",
+      "125. Valid Palindrome",
+      "5. Longest Palindromic Substring",
+      "271. Encode and Decode Strings",
+      "6. Zigzag Conversion"
+    ]
+  },
+  {
+    "name": "Divide & Conquer",
+    "one_liner": "Split the input into independent halves, solve each recursively, then spend linear work merging - the merge step is where the real algorithm lives.",
+    "use_when": [
+      "The answer over a range can be assembled from the answers over its two halves plus a cross-boundary term",
+      "Sorting or counting inversions / pairs across a split (merge sort variants)",
+      "Building a balanced structure from sorted input, or a segment-tree-style range query",
+      "Expression evaluation with different operator placements (memoized divide at every operator)",
+      "'Maximum subarray' or 'closest pair' style problems with a crossing case"
+    ],
+    "avoid_when": "The halves are not independent - one side's answer depends on choices made on the other, so the recursion overcounts or misses; use DP over a linear state instead.",
+    "template": "def divide_conquer(arr, lo, hi):\n    if lo >= hi:                       # KNOB: base case (0 or 1 element)\n        return base(arr, lo, hi)\n    mid = (lo + hi) // 2\n    left = divide_conquer(arr, lo, mid)\n    right = divide_conquer(arr, mid + 1, hi)\n    return merge(left, right)          # KNOB: the cross-boundary combine\n\ndef merge_sort(a):\n    if len(a) <= 1:\n        return a\n    mid = len(a) // 2\n    L, R = merge_sort(a[:mid]), merge_sort(a[mid:])\n    out, i, j = [], 0, 0\n    while i < len(L) and j < len(R):\n        if L[i] <= R[j]:               # <= keeps the sort STABLE\n            out.append(L[i]); i += 1\n        else:\n            out.append(R[j]); j += 1   # cross-pair counting hooks in here\n    out.extend(L[i:]); out.extend(R[j:])\n    return out",
+    "knobs": [
+      "Where to split (midpoint, at every operator, at the pivot from a partition)",
+      "What each recursive call returns (often a tuple: the answer plus the data the merge needs)",
+      "Whether the crossing case needs explicit handling separate from the two halves",
+      "Recurse on copies (simple, O(n) space per level) vs on index ranges (in place)"
+    ],
+    "complexity": "T(n) = 2T(n/2) + O(n) gives O(n log n); O(n) or O(log n) space depending on in-place-ness.",
+    "pitfalls": [
+      "Forgetting the crossing/boundary case and only combining the two half-answers",
+      "Off-by-one on mid so a half never shrinks and recursion never terminates",
+      "Breaking stability by using < instead of <= in the merge",
+      "Slicing inside the recursion, silently adding an O(n) copy per level"
+    ],
+    "canonical": [
+      "912. Sort an Array",
+      "53. Maximum Subarray",
+      "23. Merge k Sorted Lists",
+      "241. Different Ways to Add Parentheses",
+      "493. Reverse Pairs"
+    ]
+  },
+  {
+    "name": "Simulation",
+    "one_liner": "Faithfully execute the stated rules step by step, with the only real work being clean state representation and correct ordering of updates.",
+    "use_when": [
+      "The statement is a procedure or a set of rules to follow with no hidden optimization",
+      "Robot/pointer movement, spiral or snake traversal, game rounds, cellular automata",
+      "Constraints are small enough that the literal number of steps is affordable",
+      "Parsing plus stepping: calculators, text editors, virtual machines, string transformations",
+      "There is no obvious pattern, and correctness under all the edge rules is the challenge"
+    ],
+    "avoid_when": "The step count is astronomical (1e9 rounds) - look for cycle detection, a closed form, or a modular shortcut, since a literal loop will time out.",
+    "template": "def simulate(instructions, steps):\n    DIRS = [(0, 1), (1, 0), (0, -1), (-1, 0)]   # KNOB: direction order = turn semantics\n    r = c = d = 0                                # state: position + facing\n    seen = {}                                    # KNOB: state -> step, for cycle shortcuts\n    for step in range(steps):\n        key = (r, c, d)\n        if key in seen:                          # a cycle: skip ahead instead of looping\n            period = step - seen[key]\n            remaining = (steps - step) % period\n            return advance(r, c, d, remaining)\n        seen[key] = step\n        op = instructions[step % len(instructions)]\n        if op == 'R':\n            d = (d + 1) % 4                      # right turn\n        elif op == 'L':\n            d = (d - 1) % 4\n        else:\n            dr, dc = DIRS[d]\n            r, c = r + dr, c + dc                # KNOB: apply bounds/collision rules here\n    return r, c, d",
+    "knobs": [
+      "State representation: the minimum tuple that fully determines the next step",
+      "Direction array ordering and how turns map onto it",
+      "Simultaneous vs sequential update (snapshot the old state if all cells update at once)",
+      "Whether to add cycle detection to skip a huge step count"
+    ],
+    "complexity": "O(steps * work per step); space is the state size, plus O(states) if you memoize for cycles.",
+    "pitfalls": [
+      "Updating in place when the rules say all changes happen simultaneously",
+      "Direction indices that go negative without a % 4 normalization",
+      "Missing one edge rule from the statement (re-read it before coding)",
+      "Looping the literal step count when a cycle would collapse it"
+    ],
+    "canonical": [
+      "54. Spiral Matrix",
+      "289. Game of Life",
+      "874. Walking Robot Simulation",
+      "2013. Detect Squares",
+      "38. Count and Say"
+    ]
+  },
+  {
+    "name": "Cyclic Sort",
+    "one_liner": "When values are a near-permutation of 1..n or 0..n-1, swap each number to its own index so any mismatch afterwards exposes the missing or duplicated ones in O(1) space.",
+    "use_when": [
+      "The array contains n numbers drawn from the range 1..n or 0..n",
+      "Asked for the missing number, the duplicate, the first missing positive, or all disappeared numbers",
+      "The constraints demand O(n) time AND O(1) extra space, ruling out a hash set",
+      "The value itself can serve as an index (value-as-address)",
+      "Multiple missing/duplicated values must all be reported"
+    ],
+    "avoid_when": "Values are arbitrary, sparse, or outside the index range, or the input must not be modified - then a hash set, XOR trick, or Gauss sum is the right tool.",
+    "template": "def cyclic_sort(nums):\n    i = 0\n    n = len(nums)\n    while i < n:\n        j = nums[i] - 1                  # KNOB: -1 for 1..n, no offset for 0..n-1\n        if 0 <= j < n and nums[i] != nums[j]:\n            nums[i], nums[j] = nums[j], nums[i]   # swap into place; do NOT advance i\n        else:\n            i += 1                       # in place or out of range -> move on\n    return nums\n\ndef find_missing_and_duplicate(nums):\n    cyclic_sort(nums)\n    missing, duplicate = [], []\n    for i, x in enumerate(nums):\n        if x != i + 1:                   # KNOB: the post-scan mismatch test\n            missing.append(i + 1)\n            duplicate.append(x)\n    return missing, duplicate",
+    "knobs": [
+      "The index offset: nums[i] - 1 for 1..n versus nums[i] for 0..n-1",
+      "Swap condition compares VALUES (nums[i] != nums[j]) not indices, so duplicates terminate",
+      "Whether out-of-range values are ignored (first missing positive) or impossible",
+      "Alternative in-place marking by negation when the array must stay a permutation"
+    ],
+    "complexity": "O(n) time (each swap places one value permanently), O(1) extra space.",
+    "pitfalls": [
+      "Advancing i after a swap, skipping the newly arrived value",
+      "Comparing indices (i != j) instead of values, causing an infinite loop on duplicates",
+      "Getting the -1 offset wrong and going out of bounds",
+      "Applying it when the input array must not be mutated"
+    ],
+    "canonical": [
+      "268. Missing Number",
+      "448. Find All Numbers Disappeared in an Array",
+      "287. Find the Duplicate Number",
+      "41. First Missing Positive",
+      "442. Find All Duplicates in an Array"
+    ]
+  },
+  {
+    "name": "K-way Merge",
+    "one_liner": "Advance k already-sorted sequences together through a size-k heap, so the global next-smallest is always available in O(log k).",
+    "use_when": [
+      "Merging k sorted lists, arrays, or file streams into one sorted output",
+      "The k-th smallest element across k sorted rows/columns or a sorted matrix",
+      "Smallest range covering at least one element from each of k lists",
+      "K pairs with the smallest sums from two or more sorted arrays",
+      "Data is too large to concatenate and sort, but each source is already ordered"
+    ],
+    "avoid_when": "k is 2, or the total size is small - a simple two-pointer merge or one concatenate-and-sort is shorter and just as fast without the heap bookkeeping.",
+    "template": "import heapq\n\ndef merge_k_sorted(lists):\n    heap = []\n    for li, seq in enumerate(lists):\n        if seq:                                   # skip empty sources\n            heapq.heappush(heap, (seq[0], li, 0))  # (value, list index, position)\n    out = []\n    while heap:\n        val, li, pos = heapq.heappop(heap)\n        out.append(val)\n        if pos + 1 < len(lists[li]):              # KNOB: refill ONLY from the popped list\n            heapq.heappush(heap, (lists[li][pos + 1], li, pos + 1))\n    return out\n\ndef kth_smallest(lists, k):\n    it = merge_k_sorted(lists)                    # KNOB: stop after k pops instead\n    return it[k - 1] if k <= len(it) else None",
+    "knobs": [
+      "Heap tuple contents: (value, source id, position) or (value, node) for linked lists",
+      "Whether to stop after k pops or drain everything",
+      "Heap-based O(N log k) vs pairwise divide-and-conquer merging (same bound, no heap)",
+      "Tiebreakers so equal values never force a comparison of unorderable payloads"
+    ],
+    "complexity": "O(N log k) time for N total elements across k lists; O(k) heap space.",
+    "pitfalls": [
+      "Pushing all N elements at once, making the heap O(N) instead of O(k)",
+      "Refilling from the wrong list after a pop",
+      "TypeError comparing ListNode objects when values tie (include the source index)",
+      "Not skipping empty input lists when seeding the heap"
+    ],
+    "canonical": [
+      "23. Merge k Sorted Lists",
+      "378. Kth Smallest Element in a Sorted Matrix",
+      "373. Find K Pairs with Smallest Sums",
+      "632. Smallest Range Covering Elements from K Lists",
+      "88. Merge Sorted Array"
+    ]
   }
 ]
