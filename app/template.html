@@ -124,17 +124,17 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:2px 0}
 .weak .pct{width:34px;text-align:right;font-family:var(--mono);font-size:12px;color:var(--ink3)}
 
 /* difficulty donut */
-.mix{display:flex;align-items:center;gap:16px}
-.donut{width:116px;height:116px;flex:none;overflow:visible}
+.mix{display:flex;flex-direction:column;align-items:center;gap:14px}
+.donut{width:132px;height:132px;flex:none;overflow:visible}
 .donut circle{transition:opacity .15s}
 .donut .hole{font-family:var(--sans)}
-.mixlegend{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
-.mixrow{display:flex;align-items:flex-start;gap:9px}
-.mixrow i{width:10px;height:10px;border-radius:3px;display:block;flex:none;margin-top:4px}
-.mixrow .nm{font-size:14px;font-weight:500;line-height:1.25}
-.mixrow .ct{font-family:var(--mono);font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums;white-space:nowrap;margin-top:1px}
+.mixlegend{width:100%;display:flex;flex-direction:column;gap:8px}
+.mixrow{display:grid;grid-template-columns:10px auto 1fr;align-items:baseline;gap:9px}
+.mixrow i{width:10px;height:10px;border-radius:3px;display:block;position:relative;top:1px}
+.mixrow .nm{font-size:14px;font-weight:500}
+.mixrow .ct{font-family:var(--mono);font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
 .mixrow .ct b{color:var(--ink2);font-weight:600}
-@media (max-width:360px){.mix{gap:12px}.donut{width:100px;height:100px}}
+@media (max-width:359px){.donut{width:118px;height:118px}.mixrow .ct{font-size:11px}}
 
 /* review + drill */
 .rv-head{display:flex;align-items:center;justify-content:space-between;height:56px;gap:10px}
@@ -812,26 +812,32 @@ function renderToday(){
   $('#deckinfo').textContent=problems().length+' problems, deck built '+DATA.built;
 }
 
-// Part-to-whole at a glance: each difficulty is an arc sized by how many
-// problems it holds, the solid part done and the pale part still to come.
-// Every number is also written in the legend, so nothing is colour-alone.
+// Part-to-whole at a glance. Each difficulty is an arc sized by how many
+// problems it holds, split three ways by how well you know them: solid for
+// known, half-lit for still learning, faint for not started. Every number is
+// written out in the legend, so nothing is carried by colour alone.
+const MATURE = 21;   // days; the usual threshold for a memory that has stuck
 function renderMix(){
   const DIFFS=[['Easy','--c-easy'],['Medium','--c-med'],['Hard','--c-hard']];
-  const stat={}; DIFFS.forEach(function(d){ stat[d[0]]={done:0,total:0}; });
+  const stat={}; DIFFS.forEach(function(d){ stat[d[0]]={known:0,learning:0,left:0,total:0}; });
   problems().forEach(function(p){ const st=stat[p.difficulty]; if(!st) return;
-    st.total++; if(cardOf(p.id).state!=='new') st.done++; });
+    st.total++;
+    const c=cardOf(p.id);
+    if(c.state==='new') st.left++;
+    else if(c.state==='review' && c.ivl>=MATURE) st.known++;
+    else st.learning++; });
   const grand=DIFFS.reduce(function(a,d){ return a+stat[d[0]].total; },0);
-  const doneAll=DIFFS.reduce(function(a,d){ return a+stat[d[0]].done; },0);
+  const known=DIFFS.reduce(function(a,d){ return a+stat[d[0]].known; },0);
+  const learning=DIFFS.reduce(function(a,d){ return a+stat[d[0]].learning; },0);
   const svg=$('#mix-svg'), leg=$('#mix-legend');
   if(!grand){ svg.innerHTML=''; leg.innerHTML='<span class="faint small">No problems in the deck yet.</span>'; $('#mix-sum').textContent=''; return; }
 
   const R=45, CX=60, CY=60, W=16, C=2*Math.PI*R, GAP=2;
+  const TIERS=[['known',1,'known'],['learning',.5,'still learning'],['left',.16,'not started']];
   const parts=[];
   DIFFS.forEach(function(d){ const st=stat[d[0]];
-    if(st.done>0) parts.push({v:st.done, col:'var('+d[1]+')', op:1, label:st.done+' '+d[0].toLowerCase()+' done'});
-    const left=st.total-st.done;
-    if(left>0) parts.push({v:left, col:'var('+d[1]+')', op:'var(--c-dim)', label:left+' '+d[0].toLowerCase()+' left'});
-  });
+    TIERS.forEach(function(t){ const v=st[t[0]];
+      if(v>0) parts.push({v:v, col:'var('+d[1]+')', op:t[1], label:v+' '+d[0].toLowerCase()+' '+t[2]}); }); });
   const usable=C-parts.length*GAP;
   let at=0, out='';
   parts.forEach(function(p){
@@ -841,18 +847,19 @@ function renderMix(){
          ' transform="rotate('+(at/C*360-90).toFixed(3)+' '+CX+' '+CY+')"><title>'+esc(p.label)+'</title></circle>';
     at+=len+GAP;
   });
-  out+='<text class="hole" x="'+CX+'" y="'+(CY-2)+'" text-anchor="middle" dominant-baseline="middle"'+
-       ' fill="var(--ink)" font-size="23" font-weight="600" style="font-variant-numeric:tabular-nums">'+doneAll+'</text>'+
+  out+='<text x="'+CX+'" y="'+(CY-2)+'" text-anchor="middle" dominant-baseline="middle"'+
+       ' fill="var(--ink)" font-size="23" font-weight="600" style="font-variant-numeric:tabular-nums">'+known+'</text>'+
        '<text x="'+CX+'" y="'+(CY+16)+'" text-anchor="middle" fill="var(--ink3)" font-family="'+
-       'ui-monospace,monospace" font-size="10" letter-spacing="0.5">OF '+grand+'</text>';
+       'ui-monospace,monospace" font-size="10" letter-spacing="0.5">KNOWN</text>';
   svg.innerHTML=out;
 
-  leg.innerHTML=DIFFS.map(function(d){ const st=stat[d[0]], left=st.total-st.done;
-    return '<div class="mixrow"><i style="background:var('+d[1]+')"></i><div>'+
-      '<div class="nm">'+d[0]+'</div>'+
-      '<div class="ct"><b>'+st.done+'</b> done &middot; '+left+' left</div></div></div>';
-  }).join('');
-  $('#mix-sum').textContent=Math.round(doneAll/grand*100)+'% started';
+  leg.innerHTML=DIFFS.map(function(d){ const st=stat[d[0]];
+    return '<div class="mixrow"><i style="background:var('+d[1]+')"></i>'+
+      '<span class="nm">'+d[0]+'</span>'+
+      '<span class="ct"><b>'+st.known+'</b> known &middot; '+st.learning+' learning &middot; '+st.left+' new</span></div>';
+  }).join('')+
+  '<p class="faint" style="font-size:11.5px;margin:4px 0 0;line-height:1.35">Known means a card has reached a '+MATURE+' day interval.</p>';
+  $('#mix-sum').textContent=known+' known, '+learning+' learning';
 }
 function weakRow(k,v){ const pct=Math.round(v.score*100);
   return '<div class="r" data-p="'+esc(k)+'" style="cursor:pointer"><span class="nm">'+esc(k)+'</span><div class="bar"><b class="'+barCls(v.score)+'" style="width:'+pct+'%"></b></div><span class="pct">'+pct+'%</span></div>'; }
