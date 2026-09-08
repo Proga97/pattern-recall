@@ -28,7 +28,23 @@ for p in problems:
     p["cread"] = r.get("constraints", "")
     p["confusable"] = r.get("confusable", "")
     p["variants"] = r.get("variants", [])
-patterns = [l.strip() for l in open(ROOT/".work/PATTERNS.txt") if l.strip()] if (ROOT/".work/PATTERNS.txt").exists() else []
+# The vocabulary is tracked in data/ so CI builds it. It used to live in .work/,
+# which is gitignored, so every deployed build shipped an empty list and the
+# multiple-choice questions had no distractors.
+if (ROOT/"data/patterns.json").exists():
+    patterns = json.load(open(ROOT/"data/patterns.json"))
+elif (ROOT/".work/PATTERNS.txt").exists():
+    patterns = [l.strip() for l in open(ROOT/".work/PATTERNS.txt") if l.strip()]
+else:
+    patterns = []
+# never ship an empty list: fall back to whatever the notes actually use
+seen = []
+for pr in problems:
+    for x in pr.get("patterns", []):
+        if x not in patterns and x not in seen:
+            seen.append(x)
+patterns = patterns + sorted(seen)
+assert patterns, "pattern vocabulary is empty; the quiz would have no options"
 playbook = json.load(open(ROOT/"data/playbook.json")) if (ROOT/"data/playbook.json").exists() else []
 firebase = json.load(open(ROOT/"data/firebase.json")) if (ROOT/"data/firebase.json").exists() else None
 missing_recog = [p["id"] for p in problems if not p.get("signals")]
@@ -86,4 +102,4 @@ sw = ("<script>if('serviceWorker' in navigator){window.addEventListener('load',f
 print("docs/index.html written for GitHub Pages")
 print(f"dist/index.html: {len(out)//1024} KB, {len(problems)} problems, "
       f"{len(problems)-len(missing)} with notes, {len(problems)-len(missing_recog)} with cues, "
-      f"{len(playbook)} playbook entries")
+      f"{len(playbook)} playbook entries, {len(patterns)} patterns")
