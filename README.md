@@ -14,7 +14,7 @@ solution.
 
 ## What is in it
 
-- **Today** — due count, new count, streak, a twelve week heatmap, weakest patterns.
+- **Today** — due count, new count, streak, a twelve week heatmap, weakest patterns. Thirty new problems enter the queue a day, changeable in Settings.
 - **Review** — the spaced repetition queue. Each card is a multiple choice question on the pattern, then the full answer, then Anki style grading. Your answers feed the same pattern accuracy the drill uses.
 - **Spot the pattern** — the same question type as a standalone drill, ten in a row, weighted towards your weak patterns and not touching the review schedule.
 - **Library** — every problem and every pattern, with mastery bars.
