@@ -9,6 +9,8 @@ The app is a single HTML page published as a claude.ai Artifact. Review
 progress lives in the artifact's cloud database, so it syncs across
 phone and laptop as long as you open it from claude.ai.
 
+Live artifact: https://claude.ai/code/artifact/a1fb7f68-abec-4801-9f89-3b519d9da4b2
+
 ## Layout
 
 | Path | What |
