@@ -387,57 +387,152 @@ async function writeDoc(coll, id, data){
   data=Object.assign({}, data, {_m:Date.now()});
   if(coll==='drill') data.name=id;
   S[coll][id]=data; delete S.tomb[coll][id]; saveLocal(coll); LS.set('tomb',S.tomb);
-  if(mode==='gist'||mode==='api') pushSoon();
+  if(mode==='firebase') fbPushSoon(coll);
+  else if(mode==='gist') pushSoon();
   else if(mode==='db'&&db){ try{ await db.doc(coll+'/'+(coll==='drill'?slug(id):id)).set(data); }catch(e){ setSync('local','saved on device'); } }
 }
 async function delDoc(coll, id){
   delete S[coll][id]; S.tomb[coll][id]=Date.now(); saveLocal(coll); LS.set('tomb',S.tomb);
-  if(mode==='gist'||mode==='api') pushSoon();
+  if(mode==='firebase') fbPushSoon(coll);
+  else if(mode==='gist') pushSoon();
   else if(mode==='db'&&db){ try{ await db.doc(coll+'/'+(coll==='drill'?slug(id):id)).delete(); }catch(e){} }
 }
 async function saveSettings(){ S.settings._m=Date.now(); LS.set('settings',S.settings);
-  if(mode==='gist'||mode==='api') pushSoon();
+  if(mode==='firebase') fbPushSoon('settings');
+  else if(mode==='gist') pushSoon();
   else if(mode==='db'&&db){ try{ await db.doc('settings/main').set(S.settings); }catch(e){} } }
 
 function setSync(kind,text){ const el=$('#sync'); el.className='sync '+(kind==='ok'?'on':kind==='local'?'local':'');
   el.querySelector('span').textContent=text; if(view==='settings') renderSettings(); }
 
-/* ---------- remote sync: MongoDB endpoint, or a GitHub gist ---------- */
-// Device-local credentials. They are never put in the synced snapshot.
-const API = { get url(){ return RAW.get('apiurl'); }, set url(v){ RAW.set('apiurl',v); },
-              get key(){ return RAW.get('apikey'); }, set key(v){ RAW.set('apikey',v); } };
-async function apiFetch(method, body){
-  const r = await fetch(API.url, { method:method, cache:'no-store',
-    headers: Object.assign({'Authorization':'Bearer '+API.key}, body?{'Content-Type':'application/json'}:{}),
-    body: body? JSON.stringify(body) : undefined });
-  if(!r.ok){ const e=new Error(r.status===401?'The sync key was rejected'
-      : r.status===502?'The endpoint could not reach the database'
-      : r.status===404?'No sync endpoint at that address'
-      : ('Sync endpoint returned '+r.status)); e.status=r.status; throw e; }
-  const t=await r.text(); return t? JSON.parse(t) : null;
-}
-async function apiSync(force){
-  if(mode!=='api'||!API.url||!API.key||syncing) return;
-  syncing=true; setSync('','syncing');
-  try{
-    const remote=await apiFetch('GET');
-    const pulled=mergeRemote(remote);
-    if(pushPending||force||remote==null){ await apiFetch('PUT', snapshot()); pushPending=false; }
-    lastSync=Date.now(); LS.set('lastsync',lastSync); setSync('ok','synced');
-    if(pulled) render();
-  }catch(e){ setSync('local', e.status===401?'key rejected':'sync failed'); }
-  syncing=false;
-}
-async function apiConnect(url, key){
-  API.url=String(url).trim().replace(/\/+$/,''); API.key=String(key).trim();
-  try{ await apiFetch('GET'); }catch(e){ API.url=''; API.key=''; throw e; }
-  mode='api'; pushPending=true; await apiSync(true); startAutoSync();
-}
-function apiDisconnect(){ API.url=''; API.key='';
-  mode = (GH.token&&GH.gist)?'gist':(db?'db':'local');
-  setSync(mode==='local'?'local':'ok', mode==='gist'?'synced through a gist':mode==='db'?'synced through Claude':'on this device'); }
+/* ---------- remote sync: Firebase, or a GitHub gist ---------- */
+// Emulator hook: only on localhost, only when asked for with ?emu=1
+const FB_EMU = (location.hostname==='localhost'||location.hostname==='127.0.0.1')
+  && new URLSearchParams(location.search).get('emu') ? {host:'127.0.0.1', port:8080} : null;
+let pushTimer=null, pushPending=false;
 function pushSoon(){ pushPending=true; clearTimeout(pushTimer); pushTimer=setTimeout(remoteSync,1500); }
-async function remoteSync(force){ if(mode==='api') return apiSync(force); if(mode==='gist') return gistSync(force); }
+async function remoteSync(force){ if(mode==='gist') return gistSync(force); if(mode==='firebase') return fbFlush(); }
+
+/* ---------- Firebase sync ---------- */
+// The page holds only the public Firebase config. Access is decided by the
+// security rules in firestore.rules, which pin every document to the signed-in
+// account. Sign-in is Google, so there is no key to paste on each device.
+const FB_VER='11.3.1';
+const FB_CDN='https://cdnjs.cloudflare.com/ajax/libs/firebase/'+FB_VER+'/';
+const FBC = { get cfg(){ try{ return JSON.parse(RAW.get('fbcfg')||'null'); }catch(e){ return null; } },
+              set cfg(v){ RAW.set('fbcfg', v? JSON.stringify(v):''); } };
+let fbApp=null, fbDb=null, fbAuth=null, fbUser=null, fbUnsub=[];
+
+function loadScript(src){ return new Promise(function(res,rej){
+  if(document.querySelector('script[src="'+src+'"]')) return res();
+  const s=document.createElement('script'); s.src=src; s.onload=res;
+  s.onerror=function(){ rej(new Error('Could not load the Firebase library')); };
+  document.head.appendChild(s); }); }
+async function fbLoad(){
+  if(window.firebase && window.firebase.firestore) return;
+  await loadScript(FB_CDN+'firebase-app-compat.js');
+  await loadScript(FB_CDN+'firebase-auth-compat.js');
+  await loadScript(FB_CDN+'firebase-firestore-compat.js');
+  if(!window.firebase) throw new Error('Could not load the Firebase library');
+}
+function fbInit(cfg){
+  if(!fbApp){
+    fbApp = firebase.apps && firebase.apps.length ? firebase.app() : firebase.initializeApp(cfg);
+    fbAuth = firebase.auth(); fbDb = firebase.firestore();
+    // useEmulator must come first: any other call locks Firestore's settings
+    if(FB_EMU){ fbDb.useEmulator(FB_EMU.host, FB_EMU.port);
+      fbAuth.useEmulator('http://'+FB_EMU.host+':9099', {disableWarnings:true}); }
+    // queue writes and serve reads while offline; harmless if it fails
+    try{ fbDb.enablePersistence({synchronizeTabs:true}).catch(function(){}); }catch(e){}
+  }
+  return fbApp;
+}
+function fbDocs(uid){ return fbDb.collection('users').doc(uid).collection('data'); }
+
+// Each collection is its own document: {items:{id:doc}, tomb:{id:ms}}.
+// Writing one collection cannot clobber another device's edit to a different one.
+function fbApply(coll, data){
+  if(!data) return false;
+  const rem={}; rem[coll]=data.items||{}; rem.tomb={}; rem.tomb[coll]=data.tomb||{};
+  return mergeRemote(rem);
+}
+async function fbPushColl(coll){
+  if(!fbUser) return;
+  await fbDocs(fbUser.uid).doc(coll).set({ items:S[coll]||{}, tomb:S.tomb[coll]||{}, _w:Date.now() });
+}
+async function fbPushAll(){
+  if(!fbUser) return;
+  for(const c of COLL) await fbPushColl(c);
+  await fbDocs(fbUser.uid).doc('settings').set({ items:{main:S.settings}, tomb:{}, _w:Date.now() });
+}
+let fbDirty={};
+function fbPushSoon(coll){ fbDirty[coll]=1; pushPending=true;
+  clearTimeout(pushTimer); pushTimer=setTimeout(fbFlush,1200); }
+async function fbFlush(){
+  if(mode!=='firebase'||!fbUser) return;
+  const cols=Object.keys(fbDirty); fbDirty={};
+  try{
+    for(const c of cols){
+      if(c==='settings') await fbDocs(fbUser.uid).doc('settings').set({ items:{main:S.settings}, tomb:{}, _w:Date.now() });
+      else await fbPushColl(c);
+    }
+    pushPending=false; lastSync=Date.now(); LS.set('lastsync',lastSync); setSync('ok','synced');
+  }catch(e){ setSync('local','saved on device'); }
+}
+function fbWatch(){
+  fbUnsub.forEach(function(u){ try{ u(); }catch(e){} }); fbUnsub=[];
+  if(!fbUser) return;
+  fbUnsub.push(fbDocs(fbUser.uid).onSnapshot(function(snap){
+    let changed=false;
+    snap.docChanges().forEach(function(ch){
+      if(ch.type==='removed') return;
+      const id=ch.doc.id, d=ch.doc.data();
+      if(id==='settings'){ const s=(d.items||{}).main;
+        if(s && (s._m||0)>(S.settings._m||0)){ Object.assign(S.settings,s); LS.set('settings',S.settings); changed=true; } }
+      else if(COLL.indexOf(id)>=0){ if(fbApply(id,d)) changed=true; }
+    });
+    lastSync=Date.now(); LS.set('lastsync',lastSync); setSync('ok','synced');
+    if(changed) render();
+  }, function(){ setSync('local','sync unavailable'); }));
+}
+async function fbSignIn(cfg){
+  await fbLoad(); fbInit(cfg);
+  const provider=new firebase.auth.GoogleAuthProvider();
+  try{ const r=await fbAuth.signInWithPopup(provider); return r.user; }
+  catch(e){
+    // installed apps and strict browsers block popups; fall back to a redirect
+    if(e && /popup|blocked|closed/i.test(e.code||e.message||'')){ await fbAuth.signInWithRedirect(provider); return null; }
+    throw new Error(e && e.code==='auth/unauthorized-domain'
+      ? 'This site is not in the Firebase authorized domains list' : (e.message||'Sign in failed'));
+  }
+}
+async function fbStart(cfg, isFirst){
+  await fbLoad(); fbInit(cfg);
+  try{ await fbAuth.getRedirectResult(); }catch(e){}   // completes a redirect sign-in
+  const user = fbAuth.currentUser || await new Promise(function(res){
+    const u=fbAuth.onAuthStateChanged(function(x){ u(); res(x); }); });
+  if(!user) return false;
+  fbUser=user; mode='firebase'; FBC.cfg=cfg;
+  setSync('','syncing');
+  try{
+    const snap=await fbDocs(user.uid).get();
+    let changed=false;
+    snap.forEach(function(doc){ const id=doc.id, d=doc.data();
+      if(id==='settings'){ const s=(d.items||{}).main;
+        if(s && (s._m||0)>(S.settings._m||0)){ Object.assign(S.settings,s); LS.set('settings',S.settings); changed=true; } }
+      else if(COLL.indexOf(id)>=0){ if(fbApply(id,d)) changed=true; } });
+    if(snap.empty || isFirst) await fbPushAll();
+    lastSync=Date.now(); LS.set('lastsync',lastSync); setSync('ok','synced');
+    fbWatch(); if(changed) render();
+  }catch(e){ setSync('local', /permission/i.test(e.message||'') ? 'rules deny access' : 'sync failed'); }
+  return true;
+}
+async function fbSignOut(){
+  fbUnsub.forEach(function(u){ try{ u(); }catch(e){} }); fbUnsub=[];
+  try{ if(fbAuth) await fbAuth.signOut(); }catch(e){}
+  fbUser=null; FBC.cfg=null; mode = (GH.token&&GH.gist)?'gist':(db?'db':'local');
+  setSync(mode==='local'?'local':'ok', mode==='gist'?'synced through a gist':mode==='db'?'synced through Claude':'on this device');
+}
 
 /* ---------- GitHub gist sync ---------- */
 const GIST_FILE='pattern-recall.json';
@@ -466,7 +561,6 @@ function mergeRemote(rem){
   if(changed) saveAll();
   return changed;
 }
-let pushTimer=null, pushPending=false;
 async function gistSync(force){
   if(mode!=='gist'||!GH.token||!GH.gist||syncing) return;
   syncing=true; setSync('','syncing');
@@ -506,7 +600,7 @@ async function connect(){
     try{ db = await claude.use('db'); }catch(e){ db=null; }
     try{ sample = await claude.use('sample'); }catch(e){ sample=null; }
   }
-  if(API.url&&API.key){ mode='api'; await apiSync(true); startAutoSync(); return; }
+  if(FBC.cfg){ try{ if(await fbStart(FBC.cfg,false)) return; }catch(e){ setSync('local','sign in needed'); } }
   if(GH.token&&GH.gist){ mode='gist'; await gistSync(true); startAutoSync(); return; }
   if(!db){ mode='local'; setSync('local','on this device'); return; }
   mode='db'; let first=true;
@@ -905,6 +999,44 @@ $('#add-btn').onclick=function(){
       short:$('#a-short').value.trim(),description_html:'',code:$('#a-code').value,lang:'py',solved_at:todayStr(),added:true};
     await writeDoc('extra',slug,p); await writeDoc('notes',slug,readNoteForm({})); toast('Added'); closeSheet(); render(); }; };
 
+function openFirebaseSetup(){
+  openSheet('<h2 style="font-size:20px;margin-bottom:6px">Sync through your own Firebase</h2>'+
+    '<p class="muted small" style="margin:0 0 16px">Your progress lives in a Firestore database on your own Google account and updates across devices the moment it changes. Nothing to paste but the project config, which is public by design; the security rules are what protect the data.</p>'+
+    '<ol class="steps" style="margin-bottom:18px">'+
+      '<li><span>At <a href="https://console.firebase.google.com" target="_blank" rel="noopener">console.firebase.google.com</a>, create a project and add a Web app.</span></li>'+
+      '<li><span>Copy the firebaseConfig object it shows you and paste it below.</span></li>'+
+      '<li><span>Under Build, Firestore Database, create a database, then paste the rules from firestore.rules in the repo.</span></li>'+
+      '<li><span>Under Authentication, enable the Google provider, and add this site under Settings, Authorized domains.</span></li>'+
+    '</ol>'+
+    '<div class="form"><label>firebaseConfig<textarea id="fb-cfg" style="min-height:150px" class="mono" autocapitalize="none" spellcheck="false" placeholder=\'{ "apiKey": "...", "authDomain": "...", "projectId": "...", "appId": "..." }\'></textarea></label></div>'+
+    '<div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn ghost" id="fb-cancel">Cancel</button><button class="btn primary" id="fb-save">Sign in with Google</button></div>');
+  $('#fb-cancel').onclick=closeSheet;
+  $('#fb-save').onclick=async function(){
+    const cfg=parseFbConfig($('#fb-cfg').value);
+    if(!cfg){ toast('That does not look like a firebaseConfig object'); return; }
+    const btn=$('#fb-save'); btn.disabled=true; btn.textContent='Opening Google';
+    FBC.cfg=cfg;                      // saved first: a redirect sign-in returns to a fresh page
+    try{
+      const user=await fbSignIn(cfg);
+      if(!user){ toast('Finishing sign in'); return; }   // redirect flow, page reloads
+      await fbStart(cfg, true); closeSheet(); toast('Connected'); render();
+    }catch(e){ FBC.cfg=null; toast(e.message||'Could not connect'); btn.disabled=false; btn.textContent='Sign in with Google'; }
+  };
+}
+// Accepts the raw object Firebase shows you, with or without the assignment around it.
+function parseFbConfig(text){
+  let t=String(text||'').trim();
+  if(!t) return null;
+  const i=t.indexOf('{'), j=t.lastIndexOf('}');
+  if(i<0||j<i) return null;
+  t=t.slice(i,j+1);
+  let cfg=null;
+  try{ cfg=JSON.parse(t); }
+  catch(e){ try{ cfg=(new Function('return ('+t+')'))(); }catch(e2){ return null; } }
+  if(!cfg||typeof cfg!=='object'||!cfg.apiKey||!cfg.projectId) return null;
+  return cfg;
+}
+
 /* ---------- playbook ---------- */
 let pbMode='cheat';
 $$('.seg button[data-pb]').forEach(b=>b.onclick=function(){ pbMode=b.dataset.pb; $$('.seg button[data-pb]').forEach(x=>x.classList.toggle('on',x===b)); renderPlaybook(); });
@@ -985,14 +1117,14 @@ function renderSettings(){ $('#set-new').value=S.settings.newPerDay; $('#set-ord
   const seen=Object.keys(S.cards).filter(k=>S.cards[k].state!=='new').length;
   $('#set-deck').textContent=problems().length+' problems, '+seen+' seen, built '+DATA.built;
   const c=$('#sync-card');
-  if(mode==='api'){
+  if(mode==='firebase'){
     c.innerHTML='<span class="label">Sync</span>'+
-      '<p class="small" style="margin:0">Your progress is stored in your own MongoDB database, reached through your sync endpoint. Paste the same address and key on any device.</p>'+
-      '<div class="row wrap small faint" style="gap:14px"><span>last synced '+ago(lastSync)+'</span><span class="mono" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%">'+esc(API.url)+'</span></div>'+
-      '<div class="row wrap"><button class="btn sm" id="sync-now">Sync now</button><button class="btn sm ghost" id="sync-off">Disconnect</button></div>';
-    $('#sync-now').onclick=async function(){ await apiSync(true); toast('Synced'); renderSettings(); };
-    $('#sync-off').onclick=function(){ if(!confirm('Stop syncing on this device? Your data stays in the database.')) return;
-      apiDisconnect(); toast('Disconnected'); renderSettings(); };
+      '<p class="small" style="margin:0">Signed in as '+esc((fbUser&&(fbUser.email||fbUser.displayName))||'your Google account')+'. Your progress is in your own Firebase project and updates on every device the moment it changes.</p>'+
+      '<div class="row wrap small faint" style="gap:14px"><span>last synced '+ago(lastSync)+'</span><span class="mono">'+esc((FBC.cfg&&FBC.cfg.projectId)||'')+'</span></div>'+
+      '<div class="row wrap"><button class="btn sm" id="sync-now">Sync now</button><button class="btn sm ghost" id="sync-off">Sign out</button></div>';
+    $('#sync-now').onclick=async function(){ await fbPushAll(); lastSync=Date.now(); LS.set('lastsync',lastSync); toast('Synced'); renderSettings(); };
+    $('#sync-off').onclick=async function(){ if(!confirm('Sign out on this device? Your data stays in Firebase.')) return;
+      await fbSignOut(); toast('Signed out'); renderSettings(); };
   } else if(mode==='gist'){
     c.innerHTML='<span class="label">Sync</span>'+
       '<p class="small" style="margin:0">Your progress lives in a private gist on your own GitHub account. Open this page on any device, paste the same token, and everything follows you.</p>'+
@@ -1007,32 +1139,10 @@ function renderSettings(){ $('#set-new').value=S.settings.newPerDay; $('#set-ord
       '<p class="small" style="margin:0">'+(viaClaude
         ? 'Right now this copy syncs through Claude. Connect GitHub instead and your progress lives in your own account, independent of any subscription.'
         : 'Progress is saved on this device only. Connect GitHub to sync your phone and laptop through a private gist you own.')+'</p>'+
-      '<div class="row wrap"><button class="btn sm primary" id="sync-db">Connect a database</button><button class="btn sm ghost" id="sync-setup">Use a GitHub gist</button></div>';
+      '<div class="row wrap"><button class="btn sm primary" id="sync-db">Connect Firebase</button><button class="btn sm ghost" id="sync-setup">Use a GitHub gist</button></div>';
     $('#sync-setup').onclick=openSyncSetup;
-    $('#sync-db').onclick=openDbSetup;
+    $('#sync-db').onclick=openFirebaseSetup;
   }
-}
-function openDbSetup(){
-  openSheet('<h2 style="font-size:20px;margin-bottom:6px">Sync through your own database</h2>'+
-    '<p class="muted small" style="margin:0 0 16px">A browser cannot reach MongoDB directly, so a small endpoint sits in front of it and holds the connection string. Setup is in the repo, in SETUP.md.</p>'+
-    '<ol class="steps" style="margin-bottom:18px">'+
-      '<li><span>Create a free cluster at <a href="https://cloud.mongodb.com" target="_blank" rel="noopener">cloud.mongodb.com</a> and copy its connection string.</span></li>'+
-      '<li><span>Deploy this repo to <a href="https://vercel.com/new" target="_blank" rel="noopener">Vercel</a>. It only builds the endpoint, not the page.</span></li>'+
-      '<li><span>Set MONGODB_URI, SYNC_KEY and ALLOWED_ORIGIN in the Vercel project settings.</span></li>'+
-      '<li><span>Paste the endpoint address and the same key below.</span></li>'+
-    '</ol>'+
-    '<div class="form"><label>Endpoint<input id="db-url" inputmode="url" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="https://your-project.vercel.app/api/progress"></label>'+
-    '<label>Sync key<input id="db-key" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="the SYNC_KEY you set"></label></div>'+
-    '<p class="small faint" style="margin:12px 0 0">The key is stored in this browser only. The database password stays on the endpoint and never reaches this page.</p>'+
-    '<div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn ghost" id="db-cancel">Cancel</button><button class="btn primary" id="db-save">Connect</button></div>');
-  $('#db-cancel').onclick=closeSheet;
-  $('#db-save').onclick=async function(){
-    const url=$('#db-url').value.trim(), key=$('#db-key').value.trim();
-    if(!url||!key){ toast('Endpoint and key are both needed'); return; }
-    const btn=$('#db-save'); btn.disabled=true; btn.textContent='Connecting';
-    try{ await apiConnect(url,key); closeSheet(); toast('Connected'); render(); }
-    catch(e){ toast(e.message||'Could not connect'); btn.disabled=false; btn.textContent='Connect'; }
-  };
 }
 function openSyncSetup(){
   openSheet('<h2 style="font-size:20px;margin-bottom:6px">Sync through your own GitHub</h2>'+

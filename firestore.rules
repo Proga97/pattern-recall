@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// Pattern Recall.
+//
+// Everything lives under the signed-in user's own id. A signed-out visitor
+// reads nothing and writes nothing, and one signed-in account cannot touch
+// another's documents. There is no public path anywhere in this file.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{uid}/data/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Anything not matched above is denied by default. Keep it that way.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
