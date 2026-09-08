@@ -387,18 +387,18 @@ async function writeDoc(coll, id, data){
   data=Object.assign({}, data, {_m:Date.now()});
   if(coll==='drill') data.name=id;
   S[coll][id]=data; delete S.tomb[coll][id]; saveLocal(coll); LS.set('tomb',S.tomb);
-  if(mode==='firebase') fbPushSoon();
+  if(mode==='firebase') fbQueue(coll,id,'set');
   else if(mode==='gist') pushSoon();
   else if(mode==='db'&&db){ try{ await db.doc(coll+'/'+(coll==='drill'?slug(id):id)).set(data); }catch(e){ setSync('local','saved on device'); } }
 }
 async function delDoc(coll, id){
   delete S[coll][id]; S.tomb[coll][id]=Date.now(); saveLocal(coll); LS.set('tomb',S.tomb);
-  if(mode==='firebase') fbPushSoon();
+  if(mode==='firebase') fbQueue(coll,id,'del');
   else if(mode==='gist') pushSoon();
   else if(mode==='db'&&db){ try{ await db.doc(coll+'/'+(coll==='drill'?slug(id):id)).delete(); }catch(e){} }
 }
 async function saveSettings(){ S.settings._m=Date.now(); LS.set('settings',S.settings);
-  if(mode==='firebase') fbPushSoon();
+  if(mode==='firebase') fbQueue('settings','main','set');
   else if(mode==='gist') pushSoon();
   else if(mode==='db'&&db){ try{ await db.doc('settings/main').set(S.settings); }catch(e){} } }
 
@@ -414,15 +414,21 @@ function pushSoon(){ pushPending=true; clearTimeout(pushTimer); pushTimer=setTim
 async function remoteSync(force){ if(mode==='gist') return gistSync(force); if(mode==='firebase') return fbFlush(); }
 
 /* ---------- Firebase sync ---------- */
-// One document at users/<docId>, no sign-in, open rules. Sync is on by default
-// and needs no setup. Anyone who opens this page reaches the same document, so
-// the data is shared with whoever has the URL.
+// Proper Firestore shape, one document per thing:
+//   users/me                      settings and a heartbeat
+//   users/me/cards/{problemId}    one document per card
+//   users/me/notes/{problemId}
+//   users/me/days/{YYYY-MM-DD}
+//   users/me/drill/{patternSlug}  carries name, since ids cannot hold "/"
+//   users/me/extra/{problemId}    problems added by hand
+// Two devices editing different cards never touch the same document, so
+// neither can clobber the other, and a delete is a real delete.
 const FB_VER='11.3.1';
 const FB_CDN='https://cdnjs.cloudflare.com/ajax/libs/firebase/'+FB_VER+'/';
 const FB_DEFAULT = DATA.firebase || null;
 const FB_DOC = (FB_DEFAULT && FB_DEFAULT.docId) || 'me';
 const FB_OFF = { get on(){ return RAW.get('fboff')!=='1'; }, set on(v){ RAW.set('fboff', v?'':'1'); } };
-let fbApp=null, fbDb=null, fbUnsub=null, fbSelfWrite=0;
+let fbApp=null, fbDb=null, fbUnsub=[], fbSelfWrite=0;
 
 function loadScript(src){ return new Promise(function(res,rej){
   if(document.querySelector('script[src="'+src+'"]')) return res();
@@ -445,37 +451,71 @@ function fbInit(cfg){
   }
   return fbApp;
 }
-function fbRef(){ return fbDb.collection('users').doc(FB_DOC); }
+function fbUserRef(){ return fbDb.collection('users').doc(FB_DOC); }
+function fbSub(c){ return fbUserRef().collection(c); }
+// Pattern names contain "/" and spaces, which a document id cannot, so the
+// drill collection is keyed by a slug and carries the real name inside.
+function fbIdFor(coll, key){ return coll==='drill' ? slug(key) : key; }
+function fbKeyFor(coll, docId, data){ return coll==='drill' ? ((data&&data.name)||docId) : docId; }
 
-// The whole state is one document. Firestore rejects an array inside an array,
-// which is why review history is stored as {t,r} objects.
-function fbSnapshotDoc(){ const o={ v:1, settings:S.settings, tomb:S.tomb, _w:Date.now() };
-  COLL.forEach(function(c){ o[c]=S[c]||{}; }); return o; }
-function fbApply(d){
-  if(!d) return false;
-  const rem={ tomb:d.tomb||{}, settings:d.settings };
-  COLL.forEach(function(c){ rem[c]=d[c]||{}; });
-  return mergeRemote(rem);
+// pending writes, flushed together as one batch
+let fbQ = {};
+function fbQueue(coll, id, op){
+  if(!fbQ[coll]) fbQ[coll]={};
+  fbQ[coll][id]=op; pushPending=true;
+  clearTimeout(pushTimer); pushTimer=setTimeout(fbFlush, 700);
 }
 async function fbFlush(){
   if(mode!=='firebase') return;
+  const q=fbQ; fbQ={};
+  const colls=Object.keys(q);
+  if(!colls.length) return;
   try{
+    const batch=fbDb.batch();
+    let n=0;
+    for(const c of colls){
+      for(const id in q[c]){
+        if(c==='settings'){ batch.set(fbUserRef(), {settings:S.settings, _m:S.settings._m||Date.now()}, {merge:true}); n++; continue; }
+        const ref=fbSub(c).doc(fbIdFor(c,id));
+        if(q[c][id]==='del'){ batch.delete(ref); n++; }
+        else { const v=S[c][id]; if(v){ batch.set(ref, v); n++; } }
+      }
+    }
     fbSelfWrite=Date.now();
-    await fbRef().set(fbSnapshotDoc());
+    if(n) await batch.commit();
     pushPending=false; lastSync=Date.now(); LS.set('lastsync',lastSync); setSync('ok','synced');
   }catch(e){
+    // put them back and try again; nothing is lost, local storage already has it
+    for(const c of colls){ fbQ[c]=Object.assign(fbQ[c]||{}, q[c]); }
     setSync('local','saved on device');
-    clearTimeout(pushTimer); pushTimer=setTimeout(fbFlush, 8000);   // retry, nothing is lost
+    clearTimeout(pushTimer); pushTimer=setTimeout(fbFlush, 8000);
   }
 }
-function fbPushSoon(){ pushPending=true; clearTimeout(pushTimer); pushTimer=setTimeout(fbFlush,1200); }
+// A remote document only wins if it is newer than what this device holds.
+function fbTake(coll, key, data){
+  const mine=S[coll][key];
+  if(mine && (mine._m||0) >= (data._m||0)) return false;
+  S[coll][key]=data; return true;
+}
 function fbWatch(){
-  if(fbUnsub){ try{ fbUnsub(); }catch(e){} fbUnsub=null; }
-  fbUnsub = fbRef().onSnapshot(function(doc){
-    if(Date.now()-fbSelfWrite < 1500) return;          // ignore the echo of our own write
-    if(fbApply(doc.exists? doc.data():null)) render();
-    lastSync=Date.now(); LS.set('lastsync',lastSync); setSync('ok','synced');
-  }, function(){ setSync('local','sync unavailable'); });
+  fbUnsub.forEach(function(u){ try{ u(); }catch(e){} }); fbUnsub=[];
+  COLL.forEach(function(c){
+    fbUnsub.push(fbSub(c).onSnapshot(function(snap){
+      let changed=false;
+      snap.docChanges().forEach(function(ch){
+        const data=ch.doc.data(), key=fbKeyFor(c, ch.doc.id, data);
+        if(ch.type==='removed'){ if(S[c][key]){ delete S[c][key]; changed=true; } }
+        else if(fbTake(c, key, data)) changed=true;
+      });
+      if(changed){ saveLocal(c); render(); }
+      lastSync=Date.now(); LS.set('lastsync',lastSync); setSync('ok','synced');
+    }, function(){ setSync('local','sync unavailable'); }));
+  });
+  fbUnsub.push(fbUserRef().onSnapshot(function(doc){
+    const d=doc.exists?doc.data():null;
+    if(d && d.settings && (d.settings._m||0) > (S.settings._m||0)){
+      Object.assign(S.settings, d.settings); LS.set('settings',S.settings); render(); }
+  }, function(){}));
 }
 function fbErr(e){
   const c=(e&&(e.code||e.message))||'';
@@ -487,19 +527,53 @@ async function fbStart(){
   const cfg=FB_DEFAULT; if(!cfg) return false;
   await fbLoad(); fbInit(cfg);
   mode='firebase'; setSync('','syncing');
-  const doc=await fbRef().get();
-  const changed = doc.exists ? fbApply(doc.data()) : false;
-  // Always push the merged state, not just when the document is missing.
-  // A device that already has local history must upload it on first connect,
-  // otherwise its reviews would sit here forever and never reach the others.
-  fbSelfWrite=Date.now();
-  await fbRef().set(fbSnapshotDoc());
+  let changed=false;
+  // pull every subcollection, then push anything this device holds that is
+  // newer or missing upstream, so a device that studied offline uploads it
+  for(const c of COLL){
+    const snap=await fbSub(c).get();
+    const seen={};
+    snap.forEach(function(doc){ const data=doc.data(), key=fbKeyFor(c, doc.id, data);
+      seen[key]=1; if(fbTake(c, key, data)) changed=true; });
+    for(const id in S[c]) if(!seen[id]) fbQueue(c, id, 'set');
+    saveLocal(c);
+  }
+  const u=await fbUserRef().get();
+  const ud=u.exists?(u.data()||{}):{};
+  // Migration: an earlier version kept everything as maps on this one document.
+  // Move any of that into the subcollections, then strip the old fields.
+  let legacy=false;
+  COLL.forEach(function(c){
+    const m=ud[c];
+    if(m && typeof m==='object' && !Array.isArray(m)){
+      for(const id in m){ const v=m[id];
+        if(v && typeof v==='object'){ legacy=true; if(fbTake(c,id,v)) changed=true; fbQueue(c,id,'set'); } }
+      if(Object.keys(m).length===0) legacy=true;
+    }
+  });
+  const rs=ud.settings;
+  if(rs && (rs._m||0) > (S.settings._m||0)){ Object.assign(S.settings, rs); LS.set('settings',S.settings); changed=true; }
+  else if(!rs || (S.settings._m||0) > (rs._m||0)) fbQueue('settings','main','set');
+  await fbFlush();
+  if(legacy){
+    try{
+      const del=firebase.firestore.FieldValue.delete(), strip={};
+      COLL.concat(['tomb','v','_w']).forEach(function(k){ if(k in ud) strip[k]=del; });
+      if(Object.keys(strip).length){ fbSelfWrite=Date.now(); await fbUserRef().update(strip); }
+      COLL.forEach(saveLocal);
+    }catch(e){ console.warn('could not clean up the old layout:', e && e.message); }
+  }
   lastSync=Date.now(); LS.set('lastsync',lastSync); setSync('ok','synced');
   fbWatch(); if(changed) render();
   return true;
 }
+async function fbPushEverything(){
+  for(const c of COLL) for(const id in S[c]) fbQueue(c, id, 'set');
+  fbQueue('settings','main','set');
+  await fbFlush();
+}
 function fbStop(){
-  if(fbUnsub){ try{ fbUnsub(); }catch(e){} fbUnsub=null; }
+  fbUnsub.forEach(function(u){ try{ u(); }catch(e){} }); fbUnsub=[];
   mode = (GH.token&&GH.gist)?'gist':(db?'db':'local');
   setSync(mode==='local'?'local':'ok', mode==='gist'?'synced through a gist':mode==='db'?'synced through Claude':'on this device');
 }
