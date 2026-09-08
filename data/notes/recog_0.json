@@ -1,0 +1,801 @@
+[
+ {
+  "id": "0001-two-sum",
+  "signals": [
+   "find two elements that add up to target",
+   "return indices, not values",
+   "exactly one solution / any order",
+   "unsorted array with a pair condition",
+   "complement lookup: need x such that target - x was seen"
+  ],
+  "constraints": "n up to 1e4 makes O(n^2) borderline-passable but the intended solution is O(n); values up to 1e9 in magnitude mean you cannot index an array by value, so use a hash map keyed by value.",
+  "confusable": "Sorting plus two pointers is tempting because it works for the value pair, but sorting destroys the original indices you must return; the hash map keeps index information for free.",
+  "variants": [
+   "If the array is sorted and you must return positions, use two pointers (167 Two Sum II)",
+   "If you need all unique triplets or quadruplets summing to a target, sort and fix elements then two-pointer (15 3Sum, 18 4Sum)",
+   "If it becomes a stream of numbers with repeated queries, keep the hash map as a class (170 Two Sum III)"
+  ]
+ },
+ {
+  "id": "0002-add-two-numbers",
+  "signals": [
+   "digits stored in a linked list, reverse order",
+   "add / sum two numbers represented as lists or strings",
+   "carry across positions",
+   "two sequences walked together with possibly different lengths",
+   "construct a new list while consuming inputs"
+  ],
+  "constraints": "At most 100 nodes per list, so complexity is a non-issue; the constraint is really that the number can be arbitrarily large, so converting to an integer is meant to be disallowed and you must simulate digit-by-digit with a carry.",
+  "confusable": "Converting each list to an integer, adding, and converting back looks easiest but fails on languages with fixed-width ints and misses the point; the intended pattern is a dummy-head merge-like walk with carry.",
+  "variants": [
+   "If digits are stored most-significant first, reverse the lists or use stacks (445 Add Two Numbers II)",
+   "If the inputs are strings of digits, same carry loop from the right end (415 Add Strings)",
+   "If the number is stored as an array and you add 1, the carry loop degenerates to propagate a single carry (66 Plus One)"
+  ]
+ },
+ {
+  "id": "0003-longest-substring-without-repeating-characters",
+  "signals": [
+   "longest substring / contiguous subarray",
+   "without repeating / at most k distinct / no duplicates",
+   "a window validity condition that only gets worse when you extend and better when you shrink",
+   "need last seen index of each character",
+   "length of best window, not the window itself"
+  ],
+  "constraints": "n up to 5e4 rules out O(n^2) substring enumeration; the window with a char to last-index map runs in O(n). The alphabet is letters, digits, symbols and spaces, so use a dict or a 128-slot array, not a 26-slot one.",
+  "confusable": "Brute force over all substrings with a set check is the beginner move and is O(n^2) or worse; also watch that the left pointer must never move backwards when the stale duplicate index is before the current left.",
+  "variants": [
+   "If it becomes at most k distinct characters, count frequencies in a map and shrink while distinct count > k (340 Longest Substring with At Most K Distinct Characters)",
+   "If you may replace up to k characters to make them all the same, window is valid while length - maxFreq <= k (424 Longest Repeating Character Replacement)",
+   "If the subarray must contain all characters of another string, it becomes a minimum window (76 Minimum Window Substring)"
+  ]
+ },
+ {
+  "id": "0005-longest-palindromic-substring",
+  "signals": [
+   "palindromic substring",
+   "longest / count palindromes",
+   "symmetric around a center",
+   "substring must be contiguous (not subsequence)",
+   "n small enough for quadratic"
+  ],
+  "constraints": "n up to 1000 permits O(n^2) expand-around-center or O(n^2) DP; O(n^3) brute force would be about 1e9 and too slow. If n were 1e5 you would need Manacher's algorithm.",
+  "confusable": "Longest common substring of s and reversed s looks equivalent but is wrong when a reversed non-palindrome copy exists elsewhere in the string; and beginners confuse this with palindromic subsequence, which is interval DP, not center expansion.",
+  "variants": [
+   "If asked to count palindromic substrings, the same center expansion counts each successful extension (647 Palindromic Substrings)",
+   "If it becomes longest palindromic subsequence, that is interval DP on dp[i][j] (516)",
+   "If you must reach O(n), use Manacher's algorithm; if you must partition into palindromes, precompute the palindrome table then backtrack or DP (131, 132)"
+  ]
+ },
+ {
+  "id": "0006-add-two-numbers",
+  "signals": [
+   "digits stored in a linked list, reverse order",
+   "add / sum two numbers represented as lists or strings",
+   "carry across positions",
+   "two sequences walked together with possibly different lengths",
+   "construct a new list while consuming inputs"
+  ],
+  "constraints": "At most 100 nodes per list, so complexity is a non-issue; the constraint is really that the number can be arbitrarily large, so converting to an integer is meant to be disallowed and you must simulate digit-by-digit with a carry.",
+  "confusable": "Converting each list to an integer, adding, and converting back looks easiest but fails on languages with fixed-width ints and misses the point; the intended pattern is a dummy-head merge-like walk with carry.",
+  "variants": [
+   "If digits are stored most-significant first, reverse the lists or use stacks (445 Add Two Numbers II)",
+   "If the inputs are strings of digits, same carry loop from the right end (415 Add Strings)",
+   "If the number is stored as an array and you add 1, the carry loop degenerates to propagate a single carry (66 Plus One)"
+  ]
+ },
+ {
+  "id": "0006-zigzag-conversion",
+  "signals": [
+   "written in a pattern then read row by row / line by line",
+   "convert / rearrange characters according to a described layout",
+   "direction that bounces between two bounds",
+   "only the row (or bucket) each element lands in matters",
+   "simulate the walk rather than compute the geometry"
+  ],
+  "constraints": "n and numRows up to 1000, so a single O(n) pass appending to numRows buckets is plenty; a 2D grid of size numRows by n would be 1e6 cells, wasteful but still passable, which is why a bucket per row is the intended simplification. Watch the numRows == 1 edge case where the direction never flips.",
+  "confusable": "Building the actual 2D zigzag grid with columns is the beginner move and is fiddly; only the row index sequence 0,1,..,r-1,r-2,..,1,0 matters, so bucket by row.",
+  "variants": [
+   "If the output required a fixed period formula instead of simulation, index by i mod (2*numRows-2)",
+   "If it were a spiral instead of a zigzag, simulate with direction vectors and boundary shrinking (54 Spiral Matrix, 59 Spiral Matrix II)",
+   "If characters had to be reshaped into a diagonal traversal, bucket by i+j (1424 Diagonal Traverse II)"
+  ]
+ },
+ {
+  "id": "0007-reverse-integer",
+  "signals": [
+   "reverse digits / manipulate digits of an integer",
+   "32-bit signed range, return 0 on overflow",
+   "cannot use 64-bit integers",
+   "peel digits with mod 10 and div 10",
+   "check overflow before the multiply, not after"
+  ],
+  "constraints": "Input is a single 32-bit int so there is no complexity question; the constraint that you cannot store 64-bit values is the whole problem, forcing a pre-multiplication check against 2^31-1 div 10 and its last digit.",
+  "confusable": "Converting to a string, reversing, and casting is the obvious route but sidesteps the overflow rule; in Python it silently works, but the interview-intended solution checks rev > (2^31-1)//10 before rev*10.",
+  "variants": [
+   "If asked whether a number reads the same reversed, reverse only half the digits (9 Palindrome Number)",
+   "If asked to parse digits from a string with sign and clamping, same overflow guard plus whitespace and sign handling (8 String to Integer atoi)",
+   "If digit manipulation is on a very large number, treat it as a string or list of digits (66 Plus One)"
+  ]
+ },
+ {
+  "id": "0011-container-with-most-water",
+  "signals": [
+   "choose two positions to maximize width times min(height)",
+   "pair of lines / walls / endpoints",
+   "area or product where one side limits the answer",
+   "start from the widest and shrink",
+   "greedy elimination: moving the taller side can never help"
+  ],
+  "constraints": "n up to 1e5 rules out checking all O(n^2) pairs (5e9); the two-pointer scan is O(n). Heights up to 1e4 and n up to 1e5 keep area within 1e9, so no overflow concern in most languages.",
+  "confusable": "It looks like Trapping Rain Water (42) because of the water metaphor, but here water is only between the two chosen lines, not accumulated across bars; and brute-force pairs time out.",
+  "variants": [
+   "If water is trapped over every bar, use two pointers tracking left and right max, or a monotonic stack (42 Trapping Rain Water)",
+   "If the two chosen elements must satisfy a sum condition instead of a product, sorted two pointers (167 Two Sum II)",
+   "If you want the largest rectangle under a histogram rather than between two walls, use a monotonic stack (84)"
+  ]
+ },
+ {
+  "id": "0015-3sum",
+  "signals": [
+   "all triplets that sum to zero / target",
+   "solution set must not contain duplicates",
+   "unsorted array, return values not indices",
+   "fix one element then reduce to two sum",
+   "k-sum family"
+  ],
+  "constraints": "n up to 3000 permits O(n^2) which is 9e6 operations; O(n^3) brute force is 2.7e10 and fails. Sorting is allowed because values (not indices) are returned, and sorting makes duplicate skipping trivial.",
+  "confusable": "Hash-map two sum inside a loop works but makes deduplication painful and needs extra sets; sort first so that duplicate triplets are adjacent and can be skipped by comparing neighbors.",
+  "variants": [
+   "If it becomes four numbers, add another fixed loop (18 4Sum) or generalize to k-sum recursion",
+   "If asked for the triplet sum closest to a target, keep the best absolute difference while moving pointers (16 3Sum Closest)",
+   "If asked to count triplets with sum less than target, on each pointer move add right-left to the count (259 3Sum Smaller)"
+  ]
+ },
+ {
+  "id": "0018-4sum",
+  "signals": [
+   "all unique quadruplets / k numbers summing to target",
+   "distinct indices, return values in any order",
+   "must avoid duplicate results",
+   "fix elements with nested loops then two pointers",
+   "k-sum family"
+  ],
+  "constraints": "n up to 200 makes O(n^3) about 8e6, which is fine, so two fixed loops plus a two-pointer pass is the intended complexity; values and target up to 1e9 mean sums can reach 4e9 and overflow 32-bit ints in some languages.",
+  "confusable": "Reusing the 3Sum hash approach or a hash of pair sums gets deduplication wrong (same pair used twice or duplicate quadruplets); sort and skip equal neighbors instead.",
+  "variants": [
+   "If there are four separate arrays and you count index tuples, hash all pair sums of the first two arrays (454 4Sum II)",
+   "If it is three numbers, drop one loop (15 3Sum)",
+   "If k is a parameter, write a recursive kSum that bottoms out in two pointers"
+  ]
+ },
+ {
+  "id": "0019-remove-nth-node-from-end-of-list",
+  "signals": [
+   "n-th node from the end",
+   "one pass / without knowing length",
+   "linked list where you need a position relative to the tail",
+   "delete a node so you need the node before it",
+   "gap of n between two pointers"
+  ],
+  "constraints": "At most 30 nodes so any approach passes; the implicit constraint is the follow-up demanding a single pass, which forces the two-pointer gap technique instead of count-then-walk.",
+  "confusable": "Counting the length and walking again is correct but two passes; also, forgetting the dummy head breaks the case where the head itself is removed (n equals length).",
+  "variants": [
+   "If asked for the middle node, use slow/fast where fast moves two steps (876 Middle of the Linked List)",
+   "If asked whether the list has a cycle or where it starts, that is the same fast/slow machinery (141, 142)",
+   "If asked to rotate the list by k, find length, connect tail to head, and cut at length - k mod length (61 Rotate List)"
+  ]
+ },
+ {
+  "id": "0020-valid-parentheses",
+  "signals": [
+   "brackets / parentheses must be matched and properly nested",
+   "open must be closed in correct order",
+   "last opened, first closed",
+   "validate a string of delimiters",
+   "matching pairs of different types"
+  ],
+  "constraints": "n up to 1e4 with a single O(n) stack pass; stack depth can reach n, so recursion-based matching would be risky but an explicit stack is fine.",
+  "confusable": "Counting opens minus closes works only for a single bracket type; with multiple types ordering matters, and a counter cannot detect ([)] so a stack is required.",
+  "variants": [
+   "If only one bracket type and you need the minimum insertions or removals to make it valid, a counter suffices (921, 1249)",
+   "If you must find the longest valid substring, use a stack of indices or a counter scanning both directions (32 Longest Valid Parentheses)",
+   "If the string is an expression to evaluate, the stack holds operands and operators instead (150, 224, 227)"
+  ]
+ },
+ {
+  "id": "0021-merge-two-sorted-lists",
+  "signals": [
+   "merge two sorted lists / arrays",
+   "splice nodes together, return a single sorted sequence",
+   "the merge step of merge sort",
+   "two pointers advancing over two sorted inputs",
+   "dummy head to build output"
+  ],
+  "constraints": "At most 50 nodes per list; the O(m+n) merge is the intended and only sensible complexity. Sorted input is the hint: you never need to compare more than the two current heads.",
+  "confusable": "Collecting all values, sorting, and rebuilding is O((m+n) log(m+n)) and ignores the sortedness and the splice-the-nodes requirement; the merge walk is linear.",
+  "variants": [
+   "If there are k lists, merge with a min-heap or pairwise divide and conquer (23 Merge k Sorted Lists)",
+   "If the inputs are arrays and one has spare capacity, merge from the back (88 Merge Sorted Array)",
+   "If you must sort a linked list from scratch, split with slow/fast and merge (148 Sort List)"
+  ]
+ },
+ {
+  "id": "0023-merge-k-sorted-lists",
+  "signals": [
+   "k sorted lists / arrays / streams to combine",
+   "repeatedly need the smallest among k current candidates",
+   "k-way merge",
+   "total elements N with k sources",
+   "sorted inputs plus more than two of them"
+  ],
+  "constraints": "Total elements up to 1e4 and k up to 1e4; merging one list at a time is O(N*k) = 1e8 which is borderline, while a heap or divide-and-conquer gives O(N log k). Empty lists (length 0, k up to 0) must be skipped when seeding the heap.",
+  "confusable": "Repeatedly merging list i into an accumulator like 21 looks natural but is O(N*k); the heap holding one head per list, or pairwise merging in log k rounds, is the intended improvement.",
+  "variants": [
+   "If asked for the k-th smallest element in a sorted matrix, same heap of row heads (378) or binary search on value",
+   "If asked for the smallest range covering one element from each of k lists, heap plus track current max (632 Smallest Range Covering Elements from K Lists)",
+   "If only two lists, plain merge (21); if inputs are arrays, the same heap over (value, listIndex, elementIndex)"
+  ]
+ },
+ {
+  "id": "0024-swap-nodes-in-pairs",
+  "signals": [
+   "swap adjacent nodes / reorder nodes in fixed-size groups",
+   "may not modify node values, only pointers",
+   "linked list rewiring with a fixed group size",
+   "need prev, first, second, next pointers",
+   "dummy head to handle the first group"
+  ],
+  "constraints": "At most 100 nodes, so a single O(n) pass with O(1) extra space is all that is asked; the real constraint is the ban on swapping values, which forces pointer surgery.",
+  "confusable": "Swapping the values in the two nodes passes the tests but violates the stated rule; recursion is also clean here but for k-groups iterative rewiring is expected.",
+  "variants": [
+   "If the group size is k instead of 2, reverse each full group in place (25 Reverse Nodes in k-Group)",
+   "If you must reverse a sub-range given by positions, walk to the node before and reverse a fixed count (92 Reverse Linked List II)",
+   "If you must interleave the first half with the reversed second half, split, reverse, merge (143 Reorder List)"
+  ]
+ },
+ {
+  "id": "0025-reverse-nodes-in-k-group",
+  "signals": [
+   "reverse k at a time / in groups of k",
+   "leftover nodes remain as is",
+   "cannot change node values, only nodes",
+   "linked list segment reversal repeated",
+   "need to check a full group exists before reversing"
+  ],
+  "constraints": "n up to 5000 with k up to n; O(n) with O(1) extra space is expected, and the group check must not re-scan more than k nodes per group so the total remains linear.",
+  "confusable": "Reversing the whole list and fixing up afterwards, or copying values into an array and writing them back, is either wrong for partial groups or breaks the no-value-change rule; do a bounded reverse per group with reconnection.",
+  "variants": [
+   "If k equals 2, it is Swap Nodes in Pairs (24)",
+   "If you reverse only one range given by positions left and right, it is Reverse Linked List II (92)",
+   "If groups alternate between reversed and untouched, add a toggle between groups (Reverse Alternate k Nodes, a common interview variant)"
+  ]
+ },
+ {
+  "id": "0028-find-the-index-of-the-first-occurrence-in-a-string",
+  "signals": [
+   "first occurrence of needle in haystack",
+   "substring search / pattern matching / indexOf",
+   "return index or -1",
+   "fixed-length pattern compared at each position",
+   "string matching family"
+  ],
+  "constraints": "Both lengths up to 1e4, so the naive O(n*m) slide is up to 1e8 character comparisons in the worst case and still passes; KMP or rolling hash gives O(n+m) and is what a follow-up would expect.",
+  "confusable": "Trying a variable-size sliding window with character counts finds anagrams, not exact matches; the pattern must match in order, so compare slices or use KMP.",
+  "variants": [
+   "If you need to find all anagram positions of the pattern, fixed window with frequency counts (438 Find All Anagrams in a String)",
+   "If you must handle many queries or very long strings, Rabin-Karp rolling hash (187 Repeated DNA Sequences) or KMP failure table (1392 Longest Happy Prefix)",
+   "If you check whether one string is a rotation of another, search s1 in s2+s2"
+  ]
+ },
+ {
+  "id": "0030-substring-with-concatenation-of-all-words",
+  "signals": [
+   "substring that is a concatenation of all words in any order",
+   "all words have the same length",
+   "exact multiset match of chunks",
+   "window of fixed total length = wordLen * count",
+   "start offsets modulo word length"
+  ],
+  "constraints": "s up to 1e4, up to 5000 words of length up to 30; checking each of the n start positions by chopping into count chunks is O(n * count) ~ 5e7 with early bailout, acceptable. The optimized version slides one window per starting offset in [0, wordLen), giving O(n * wordLen).",
+  "confusable": "A character-frequency sliding window (like anagram search) is wrong because chunks must be whole words in the given alignment; and generating all permutations of words is factorial.",
+  "variants": [
+   "If words were single characters, it becomes Find All Anagrams (438) with a fixed window",
+   "If words had different lengths, you would need a Trie or backtracking (word break style, 139/140)",
+   "If you need the minimum window containing a multiset of characters rather than an exact concatenation, use 76 Minimum Window Substring"
+  ]
+ },
+ {
+  "id": "0033-search-in-rotated-sorted-array",
+  "signals": [
+   "sorted then rotated / pivoted",
+   "O(log n) required",
+   "find target in an array with one discontinuity",
+   "one half of any split is always sorted",
+   "distinct values"
+  ],
+  "constraints": "n up to 5000 would technically pass a linear scan, but the statement demands O(log n); distinct values are what guarantee that comparing nums[mid] with nums[lo] tells you which half is sorted.",
+  "confusable": "Plain binary search on nums fails because the array is not globally sorted; finding the rotation point first works but is two searches, while checking which half is sorted at each step is a single search.",
+  "variants": [
+   "If duplicates are allowed, you may have to shrink both ends by one when nums[lo] == nums[mid] == nums[hi], degrading to O(n) worst case (81 Search in Rotated Sorted Array II)",
+   "If asked for the minimum, binary search comparing mid to hi (153, 154)",
+   "If the array is unimodal instead of rotated, binary search for a peak (162 Find Peak Element, 852)"
+  ]
+ },
+ {
+  "id": "0036-valid-sudoku",
+  "signals": [
+   "validate a board / grid against row, column and sub-box rules",
+   "no repetition within a group",
+   "fixed 9 x 9 size",
+   "membership test per group",
+   "group key derived from (r//3, c//3)"
+  ],
+  "constraints": "The board is fixed at 81 cells so complexity is irrelevant; the design question is the data structure, and sets keyed by row, column, and box index (or a 9x9 bitmask) give O(1) checks in a single pass.",
+  "confusable": "Trying to actually solve the puzzle is unnecessary and much harder; also, checking only rows and columns and forgetting the 3x3 boxes is the common bug.",
+  "variants": [
+   "If asked to fill the board, backtrack with the same three set families (37 Sudoku Solver)",
+   "If asked whether N queens are placed validly, use sets for columns and the two diagonals r-c and r+c (51 N-Queens)",
+   "If validating a matrix where each row and column must be a permutation, same per-row and per-column sets (2133 Check if Every Row and Column Contains All Numbers)"
+  ]
+ },
+ {
+  "id": "0037-sudoku-solver",
+  "signals": [
+   "fill empty cells subject to constraints",
+   "exactly one solution guaranteed",
+   "try each candidate, recurse, undo",
+   "constraint satisfaction on a small fixed board",
+   "backtracking with O(1) validity checks"
+  ],
+  "constraints": "Fixed 9 x 9 board, so the search space, not n, is the concern; with row/col/box sets making each check O(1) and pruning on the first conflict, plain backtracking is fast enough. The unique-solution guarantee means you can stop at the first success.",
+  "confusable": "Treating it as pure validation (36) or trying a greedy fill-cells-with-a-single-candidate loop stalls on harder boards; you need recursion with undo.",
+  "variants": [
+   "If placing N non-attacking queens, same backtracking with column and diagonal sets (51/52 N-Queens)",
+   "If filling a grid path with all cells visited, backtracking with visited marking (980 Unique Paths III)",
+   "If the choices per step are letters instead of digits, it becomes Word Search (79)"
+  ]
+ },
+ {
+  "id": "0039-combination-sum",
+  "signals": [
+   "return all combinations / all unique combinations",
+   "sum to target",
+   "same number may be chosen unlimited times",
+   "distinct candidates",
+   "enumerate subsets with a start index to avoid permutations"
+  ],
+  "constraints": "At most 30 candidates, values 2..40 and target up to 40, so combinations have at most 20 elements and the tree is small; the exponential enumeration is intended. Sorting candidates and breaking when a candidate exceeds the remaining target prunes heavily.",
+  "confusable": "Coin-change DP counts or minimizes but cannot list the combinations; also, iterating from index 0 in the recursion produces permutations and duplicate combinations, so pass a start index.",
+  "variants": [
+   "If each candidate may be used at most once and there are duplicates, sort and skip equal siblings at the same depth (40 Combination Sum II)",
+   "If only the count of combinations is needed, use DP (518 Coin Change II) or minimum coins DP (322)",
+   "If you need k numbers from 1..9 with a target, bounded backtracking (216 Combination Sum III)"
+  ]
+ },
+ {
+  "id": "0045-jump-game-ii",
+  "signals": [
+   "minimum number of jumps / steps",
+   "each position gives a maximum reach forward",
+   "fewest moves to reach the end",
+   "BFS layers over a line",
+   "current level's farthest reach"
+  ],
+  "constraints": "n up to 1e4 so an O(n^2) DP (for each i, relax all reachable j) is 1e8 in the worst case and usually passes, but the greedy level-by-level scan is O(n). Reachability is guaranteed, so you never need a failure branch.",
+  "confusable": "Greedy jump to the largest nums[i] fails because a smaller jump can land on a better launch pad; the correct greedy jumps to whichever position maximizes i + nums[i] within the current range, which is BFS by levels.",
+  "variants": [
+   "If asked only whether the end is reachable, track the maximum reach (55 Jump Game)",
+   "If jumps can go both directions or cost varies, this becomes a real BFS or DP (1306 Jump Game III, 1345 Jump Game IV)",
+   "If each jump has a cost or a score, use DP with a monotonic deque for the window max (1696 Jump Game VI)"
+  ]
+ },
+ {
+  "id": "0048-rotate-image",
+  "signals": [
+   "rotate matrix 90 degrees",
+   "in-place, do not allocate another matrix",
+   "n x n square grid",
+   "transpose and reverse",
+   "layer by layer four-way cycle"
+  ],
+  "constraints": "n up to 20 so time is not a concern; the in-place requirement is the entire problem and forces either transpose-then-reverse-rows or moving four cells at a time with one temp.",
+  "confusable": "Writing rotated[j][n-1-i] = matrix[i][j] into a fresh matrix is easy but violates in-place; and an incorrect composition (reverse then transpose) gives counter-clockwise rotation.",
+  "variants": [
+   "If rotation is counter-clockwise, transpose then reverse each column (or reverse rows then transpose)",
+   "If the matrix is not square, in-place is impossible, so you must allocate (867 Transpose Matrix)",
+   "If you traverse in a spiral rather than rotate, use shrinking boundaries (54 Spiral Matrix)"
+  ]
+ },
+ {
+  "id": "0049-group-anagrams",
+  "signals": [
+   "group / bucket items by some equivalence",
+   "anagrams: same letters, different order",
+   "canonical key for each item",
+   "return groups in any order",
+   "hash map from key to list"
+  ],
+  "constraints": "Up to 1e4 strings of length up to 100; sorting each string costs O(L log L) for total ~7e6, and a 26-count tuple key gives O(L) per string. Lowercase-only letters make the 26-slot count tuple possible.",
+  "confusable": "Comparing every pair of strings for anagram-ness is O(n^2 * L) = 1e10; the insight is to compute a canonical form once per string and bucket, not to compare pairs.",
+  "variants": [
+   "If checking whether two strings are anagrams, compare counts directly (242 Valid Anagram)",
+   "If grouping strings by shift pattern instead of letter multiset, the key becomes the sequence of differences mod 26 (249 Group Shifted Strings)",
+   "If finding all anagram occurrences inside a text, use a fixed sliding window of counts (438)"
+  ]
+ },
+ {
+  "id": "0055-jump-game",
+  "signals": [
+   "can you reach the last index",
+   "each element is the maximum jump length",
+   "reachability along a line",
+   "farthest reach so far",
+   "greedy on a prefix"
+  ],
+  "constraints": "n up to 1e4 so an O(n^2) DP would be 1e8 and borderline; the intended O(n) greedy tracks the farthest reachable index (or scans right to left for the leftmost good index). Values up to 1e5 exceed n, so cap reach at n-1 or just compare.",
+  "confusable": "DFS/BFS over all reachable positions works but is quadratic or exponential without care; since reach on a line is contiguous, a single max-reach variable suffices.",
+  "variants": [
+   "If asked for the minimum number of jumps, use the level-by-level greedy (45 Jump Game II)",
+   "If you can jump either direction by exactly nums[i] and need to reach a zero, real BFS with visited (1306 Jump Game III)",
+   "If the array is a circular track or has costs, model as a graph or DP (1345, 1696)"
+  ]
+ },
+ {
+  "id": "0056-merge-intervals",
+  "signals": [
+   "intervals with start and end",
+   "merge overlapping",
+   "return non-overlapping set that covers all",
+   "sort by start then sweep",
+   "overlap only with the last kept interval"
+  ],
+  "constraints": "Up to 1e4 intervals so O(n log n) sort plus linear sweep is intended; O(n^2) pairwise overlap checks would pass here but do not generalize. Coordinates up to 1e4 would even allow a difference array but sorting is the general tool.",
+  "confusable": "Checking each interval against all previously merged ones is O(n^2) and unnecessary; after sorting by start, an interval can only overlap the most recently merged one.",
+  "variants": [
+   "If a single new interval must be inserted into an already sorted non-overlapping list, three-phase scan (57 Insert Interval)",
+   "If asked how many intervals to remove so none overlap, sort by end and greedily keep (435 Non-overlapping Intervals)",
+   "If asked for the minimum number of rooms or the maximum overlap, sweep line with events or a min-heap of end times (253 Meeting Rooms II)"
+  ]
+ },
+ {
+  "id": "0057-insert-interval",
+  "signals": [
+   "already sorted non-overlapping intervals",
+   "insert one new interval and merge if necessary",
+   "three regions: before, overlapping, after",
+   "two intervals overlap if they share a point",
+   "output remains sorted"
+  ],
+  "constraints": "Up to 1e4 intervals already sorted, so a single O(n) pass is intended; re-sorting and running Merge Intervals would be O(n log n) and acceptable, but wastes the given order.",
+  "confusable": "Appending the new interval and calling Merge Intervals (56) works but ignores the sorted guarantee; also, using strict inequality for overlap misses intervals that touch at a single point.",
+  "variants": [
+   "If many intervals must be inserted or the set changes dynamically, keep a sorted structure or TreeMap (715 Range Module)",
+   "If instead you remove an interval from a set, split intervals that straddle it (1272 Remove Interval)",
+   "If the intervals are unsorted, sort first and merge (56)"
+  ]
+ },
+ {
+  "id": "0064-minimum-path-sum",
+  "signals": [
+   "grid path from top-left to bottom-right",
+   "move only right or down",
+   "minimize / maximize / count paths",
+   "cell value depends on top and left neighbours",
+   "non-negative weights"
+  ],
+  "constraints": "m, n up to 200 so an O(m*n) = 4e4 DP is trivial; the restricted movement (right/down only) is what makes it DP rather than Dijkstra, since the DAG order is row-major.",
+  "confusable": "Greedy choosing the smaller of right and down at each step fails because a locally cheap step can lead into an expensive region; and running Dijkstra is correct but overkill when moves are only right and down.",
+  "variants": [
+   "If you only count the paths (with or without obstacles), same DP with addition (62 Unique Paths, 63 Unique Paths II)",
+   "If movement is allowed in all four directions, it becomes Dijkstra or 0-1 BFS (1631 Path With Minimum Effort, 1368)",
+   "If the grid is a triangle, same DP with two parents per cell (120 Triangle)"
+  ]
+ },
+ {
+  "id": "0069-sqrtx",
+  "signals": [
+   "integer square root / rounded down",
+   "cannot use built-in pow or sqrt",
+   "find the largest k with f(k) <= x where f is monotonic",
+   "binary search on the answer",
+   "single integer input up to 2^31-1"
+  ],
+  "constraints": "x up to 2^31-1 so a linear scan of ~4.6e4 candidates would pass, but the monotonic predicate mid*mid <= x is the hint for O(log x) binary search; mid*mid can reach ~4.6e18, so use 64-bit or compare mid <= x // mid.",
+  "confusable": "Reaching for Newton's method or floating point sqrt then flooring can be off by one for large x; binary search on integers is exact.",
+  "variants": [
+   "If asked whether x is a perfect square, same search but require mid*mid == x (367 Valid Perfect Square)",
+   "If asked for the k-th root or the smallest divisor satisfying a bound, binary search on the answer with a monotonic feasibility check (1283, 875 Koko Eating Bananas)",
+   "If computing pow(x, n), use fast exponentiation instead (50 Pow(x, n))"
+  ]
+ },
+ {
+  "id": "0070-climbing-stairs",
+  "signals": [
+   "number of distinct ways to reach",
+   "each step choose 1 or 2",
+   "count paths / ways on a line",
+   "answer for n depends on n-1 and n-2",
+   "Fibonacci-shaped recurrence"
+  ],
+  "constraints": "n up to 45 keeps the answer within 32-bit (fib(46) ~ 1.8e9), which is why 45 was chosen; O(n) DP with two rolling variables is expected, and plain recursion is 2^45 and times out.",
+  "confusable": "Enumerating actual sequences with backtracking explodes exponentially; only the count is asked, so use the recurrence.",
+  "variants": [
+   "If each step has a cost and you minimize, dp[i] = cost[i] + min(dp[i-1], dp[i-2]) (746 Min Cost Climbing Stairs)",
+   "If you can climb up to k steps or specific step sizes, sum over the allowed sizes (like 377 Combination Sum IV)",
+   "If you must cover a board with tiles of two shapes, the same linear recurrence with different coefficients (790 Domino and Tromino Tiling)"
+  ]
+ },
+ {
+  "id": "0071-simplify-path",
+  "signals": [
+   "canonical path / normalize",
+   "'..' goes up one level",
+   "tokens that undo the previous token",
+   "split on a delimiter and process sequentially",
+   "stack of components"
+  ],
+  "constraints": "Path length up to 3000, so split and a single O(n) stack pass is all that is needed; tricky inputs like '/../', '//' and '/a/./b/../../c/' matter more than size.",
+  "confusable": "String replace tricks on '/./' and '/../' fail on repeated or nested cases; a stack of directory names handles '..' popping correctly, including popping an empty stack at root.",
+  "variants": [
+   "If the tokens are operations that cancel each other (e.g., 'C' removes the last score), same stack (682 Baseball Game)",
+   "If adjacent equal characters cancel, stack-based removal (1047 Remove All Adjacent Duplicates in String)",
+   "If comparing two typed strings with backspaces, a stack or a reverse two-pointer walk (844 Backspace String Compare)"
+  ]
+ },
+ {
+  "id": "0076-minimum-window-substring",
+  "signals": [
+   "minimum window / smallest substring",
+   "contains all characters of t including duplicates",
+   "expand until valid, shrink while valid",
+   "frequency map of required characters",
+   "need counter that tracks how many characters are satisfied"
+  ],
+  "constraints": "m, n up to 1e5 rules out O(m^2) window enumeration; the two-pointer window is O(m + n). Letters only, so a 52- or 128-slot array works, but a dict is fine. Track a 'formed' counter so validity is O(1) per step, not a full map comparison.",
+  "confusable": "Comparing the whole frequency map at each step makes it O(m * alphabet) which is fine here but sloppy; the real trap is a fixed-size window (anagram search) when the window length is not known in advance.",
+  "variants": [
+   "If the window must be exactly the length of t, use a fixed-size window (438 Find All Anagrams, 567 Permutation in String)",
+   "If asked for the longest window with at most k distinct characters, flip the expand/shrink condition (340)",
+   "If it becomes a subsequence rather than substring, use two pointers or DP (727 Minimum Window Subsequence)"
+  ]
+ },
+ {
+  "id": "0079-word-search",
+  "signals": [
+   "does a word exist in a grid",
+   "adjacent cells horizontally or vertically",
+   "each cell used at most once",
+   "path search with restore on backtrack",
+   "small grid, moderate word length"
+  ],
+  "constraints": "Grid at most 6 x 6 and word up to 15, so exponential DFS from every cell is intended; mark visited in place and restore. If the grid were large or there were many words, you would need pruning or a Trie.",
+  "confusable": "Plain BFS or DFS with a global visited set fails because different paths may reuse the same cell; visited must be per path, i.e., marked and unmarked as you backtrack.",
+  "variants": [
+   "If there are many words to find, build a Trie and DFS once from each cell (212 Word Search II)",
+   "If you need the number of islands or connected regions instead of a specific path, flood fill with a global visited set (200)",
+   "If the target is a path visiting every cell, count with backtracking (980 Unique Paths III)"
+  ]
+ },
+ {
+  "id": "0083-remove-duplicates-from-sorted-list",
+  "signals": [
+   "sorted linked list",
+   "delete duplicates so each value appears once",
+   "duplicates are adjacent",
+   "compare node with next",
+   "in-place rewiring"
+  ],
+  "constraints": "At most 300 nodes; the sorted guarantee means a single O(n) pass with no extra memory, whereas an unsorted list would require a hash set.",
+  "confusable": "Reaching for a set of seen values is unnecessary given the sort; and confusing this with 82, which removes every node that has a duplicate rather than keeping one copy.",
+  "variants": [
+   "If nodes with duplicates must be removed entirely, keep a prev pointer and skip whole runs (82 Remove Duplicates from Sorted List II)",
+   "If the input is a sorted array and must be done in place, two pointers write and read (26 Remove Duplicates from Sorted Array)",
+   "If the list is unsorted, use a hash set of seen values"
+  ]
+ },
+ {
+  "id": "0084-largest-rectangle-in-histogram",
+  "signals": [
+   "largest rectangle / area in a histogram",
+   "for each bar, nearest smaller to the left and right",
+   "width of bars, contiguous span limited by a shorter bar",
+   "next smaller element",
+   "monotonic increasing stack"
+  ],
+  "constraints": "n up to 1e5 rules out O(n^2) expanding from each bar; the monotonic stack computes each bar's left and right boundary in amortized O(1). Heights up to 1e4 times width 1e5 gives 1e9, fine in 32-bit but close.",
+  "confusable": "Two pointers from the ends (like Container With Most Water) is wrong because the rectangle must be filled by all bars in between, not just bounded by two; you need nearest-smaller boundaries.",
+  "variants": [
+   "If the histogram is built row by row from a binary matrix, run this per row (85 Maximal Rectangle)",
+   "If asked for next greater element instead of next smaller, flip the stack comparison (496, 503)",
+   "If the goal is trapping water rather than a rectangle, use the stack on decreasing heights or two-pointer max tracking (42)"
+  ]
+ },
+ {
+  "id": "0092-reverse-linked-list-ii",
+  "signals": [
+   "reverse a sub-range of a linked list",
+   "positions left and right, 1-indexed",
+   "reverse in one pass",
+   "need the node before the segment and the node after",
+   "stitch reversed segment back in"
+  ],
+  "constraints": "n up to 500 with left <= right <= n; O(n) single pass, O(1) space is expected. left can be 1, so a dummy head is needed to have a node before the segment.",
+  "confusable": "Reversing the whole list and trying to fix the boundaries afterwards is wrong; or copying values to an array and writing back reverses values rather than nodes, which passes but misses the pointer skill.",
+  "variants": [
+   "If you reverse the entire list, this collapses to 206 Reverse Linked List",
+   "If you reverse every k nodes, repeat this segment reversal (25 Reverse Nodes in k-Group)",
+   "If you reverse only even or odd positioned groups, add a counter to decide which segments to reverse"
+  ]
+ },
+ {
+  "id": "0094-binary-tree-inorder-traversal",
+  "signals": [
+   "inorder / preorder / postorder traversal",
+   "return node values in traversal order",
+   "BST sorted order equals inorder",
+   "iterative with explicit stack",
+   "left, node, right"
+  ],
+  "constraints": "At most 100 nodes so recursion is safe; the iterative stack version is worth knowing because the follow-up asks for it and because deep trees (1e4+) can overflow recursion in some languages.",
+  "confusable": "Using a queue gives level order, not inorder; and in the iterative version, pushing right before visiting the node instead of walking left first gives preorder.",
+  "variants": [
+   "If you need the k-th smallest in a BST, run inorder and stop at k (230 Kth Smallest Element in a BST)",
+   "If you need O(1) space, Morris traversal with threaded pointers",
+   "If you need a next() iterator over a BST, keep the inorder stack as object state (173 BST Iterator)"
+  ]
+ },
+ {
+  "id": "0095-unique-binary-search-trees-ii",
+  "signals": [
+   "return all structurally unique trees / all structures",
+   "BST on values 1..n",
+   "choose each value as root, combine left and right results",
+   "cartesian product of subproblem results",
+   "enumerate all solutions, not count"
+  ],
+  "constraints": "n up to 8 gives Catalan(8) = 1430 trees, so the output itself is exponential and enumeration is intended; memoizing on (lo, hi) ranges avoids recomputing shared subtrees.",
+  "confusable": "The counting version (96) uses DP on sizes, but here you must return actual trees, so DP on sizes is not enough; you need the value ranges to build nodes.",
+  "variants": [
+   "If only the count is required, use the Catalan recurrence (96 Unique Binary Search Trees)",
+   "If enumerating all full binary trees with n nodes, same split-and-combine recursion (894 All Possible Full Binary Trees)",
+   "If enumerating all ways to parenthesize an expression, same divide by each operator (241 Different Ways to Add Parentheses)"
+  ]
+ },
+ {
+  "id": "0096-find-if-path-exists-in-graph",
+  "signals": [
+   "bi-directional / undirected graph given as edge list",
+   "is there a path from source to destination",
+   "connectivity / same component",
+   "vertices labeled 0..n-1",
+   "reachability query"
+  ],
+  "constraints": "n and edges up to 2e5, so O(n + E) BFS/DFS or near-linear union-find is required; adjacency matrix (4e10) is impossible, and recursive DFS may overflow the stack on a long path so prefer iterative or union-find.",
+  "confusable": "Treating the edges as a tree or scanning edges once without building adjacency misses multi-hop paths; you must build an adjacency list or union the endpoints.",
+  "variants": [
+   "If there are many connectivity queries, union-find answers each in near O(1) (1971 itself, or 547 Number of Provinces)",
+   "If you need the shortest path length in an unweighted graph, BFS with distance (1091 Shortest Path in Binary Matrix)",
+   "If you must count components, DFS from every unvisited node or count union-find roots (323 Number of Connected Components)"
+  ]
+ },
+ {
+  "id": "0096-unique-binary-search-trees",
+  "signals": [
+   "count structurally unique BSTs / trees",
+   "values 1..n, choose root splits into left and right sizes",
+   "count(n) = sum count(i-1)*count(n-i)",
+   "Catalan numbers",
+   "count, not enumerate"
+  ],
+  "constraints": "n up to 19 keeps Catalan(19) = 1.7e9 inside a 32-bit int; O(n^2) DP is trivial and naive recursion without memo is exponential. The small n is a hint that the answer grows fast and only counting is expected.",
+  "confusable": "Trying to enumerate the trees (95) times out for n = 19 and is unnecessary; the shape count depends only on subtree sizes, not on the values themselves.",
+  "variants": [
+   "If you must return the trees, recurse on value ranges (95 Unique Binary Search Trees II)",
+   "If counting valid parenthesis strings, matching bracket sequences or full binary trees, it is the same Catalan recurrence",
+   "If asked for the number of ways to reorder an array to give the same BST, it becomes combinatorics with binomials (1569)"
+  ]
+ },
+ {
+  "id": "0098-validate-binary-search-tree",
+  "signals": [
+   "valid BST / all left keys strictly less, right strictly greater",
+   "whole subtree must satisfy a bound, not just the child",
+   "pass down (lower, upper) bounds",
+   "inorder must be strictly increasing",
+   "tree property with global (not local) constraint"
+  ],
+  "constraints": "Up to 1e4 nodes and values spanning the full 32-bit range, so bounds must use None or infinity sentinels rather than INT_MIN/INT_MAX; O(n) recursion depth up to 1e4 is fine in most settings but an iterative inorder is safer.",
+  "confusable": "Checking only node.left.val < node.val < node.right.val passes locally but misses a grandchild that violates an ancestor's bound; the bound must propagate from every ancestor.",
+  "variants": [
+   "If asked to find the two swapped nodes in a BST, use inorder and look for descents (99 Recover Binary Search Tree)",
+   "If asked for the k-th smallest, inorder traversal (230)",
+   "If the property is a max-heap or balanced height instead, recursion returns height or a boolean up the tree (110 Balanced Binary Tree)"
+  ]
+ },
+ {
+  "id": "0100-same-tree",
+  "signals": [
+   "two trees identical / structurally the same",
+   "compare two roots node by node",
+   "both null, one null, values differ",
+   "recursive structural equality",
+   "two trees walked in lockstep"
+  ],
+  "constraints": "At most 100 nodes so recursion is trivially fine; the pattern is the base-case ladder (both None, one None, values differ) followed by recursion on both children.",
+  "confusable": "Comparing traversal outputs (e.g., inorder lists) is insufficient because different shapes can produce the same sequence; compare structure and values together.",
+  "variants": [
+   "If asked whether a tree is a mirror of itself, compare left and right subtrees as mirrors (101 Symmetric Tree)",
+   "If asked whether one tree is a subtree of another, run same-tree at every node (572 Subtree of Another Tree)",
+   "If asked whether two trees are leaf-similar, compare only leaf sequences (872)"
+  ]
+ },
+ {
+  "id": "0101-symmetric-tree",
+  "signals": [
+   "mirror of itself / symmetric around center",
+   "compare left subtree with right subtree",
+   "left.left vs right.right, left.right vs right.left",
+   "structural equality with swapped children",
+   "two subtrees walked in mirror lockstep"
+  ],
+  "constraints": "At most 1000 nodes so recursion is fine; an iterative version pushes pairs of nodes onto a queue or stack and is worth knowing for the follow-up.",
+  "confusable": "Checking that inorder traversal is a palindrome fails on shapes that differ but produce palindromic sequences; compare the two subtrees as mirror images.",
+  "variants": [
+   "If comparing two separate trees for equality, drop the mirror swap (100 Same Tree)",
+   "If asked to invert a tree, swap children recursively (226 Invert Binary Tree)",
+   "If asked whether two trees are flip-equivalent (any child swaps allowed), recurse on both mirrored and non-mirrored pairings (951)"
+  ]
+ },
+ {
+  "id": "0102-binary-tree-level-order-traversal",
+  "signals": [
+   "level order / level by level / breadth-first",
+   "list of lists grouped by depth",
+   "queue where you process the current queue size as one level",
+   "left to right within a level",
+   "shortest distance in an unweighted structure"
+  ],
+  "constraints": "Up to 2000 nodes, so O(n) BFS with a queue is straightforward; the trick is snapshotting len(queue) at the start of each level so levels are grouped correctly.",
+  "confusable": "DFS with a depth parameter also works if you index the output by depth, but beginners try inorder or preorder and cannot recover level boundaries.",
+  "variants": [
+   "If alternating direction per level, reverse every other level (103 Zigzag Level Order)",
+   "If you need the rightmost node per level, take the last element of each level (199 Binary Tree Right Side View)",
+   "If you need level averages, maxima, or the bottom-up order, same BFS with a different reduction (637, 515, 107)"
+  ]
+ },
+ {
+  "id": "0103-binary-tree-zigzag-level-order-traversal",
+  "signals": [
+   "zigzag / alternate direction per level",
+   "level order with a twist",
+   "left to right then right to left",
+   "toggle flag per level",
+   "BFS with post-processing"
+  ],
+  "constraints": "Up to 2000 nodes, so O(n) BFS plus reversing alternate level lists is fine; a deque appending at alternating ends avoids the reversal but is not required at this size.",
+  "confusable": "Trying to alternate the traversal order of children in the queue itself corrupts later levels; keep BFS normal and reverse the output list for odd levels.",
+  "variants": [
+   "If no alternation, it is plain level order (102)",
+   "If you must return levels bottom-up, reverse the outer list (107)",
+   "If you need the widest level with positional gaps, carry index labels through BFS (662 Maximum Width of Binary Tree)"
+  ]
+ },
+ {
+  "id": "0104-maximum-depth-of-binary-tree",
+  "signals": [
+   "maximum depth / height of a tree",
+   "longest root-to-leaf path in nodes",
+   "1 plus max of subtree answers",
+   "empty tree returns 0",
+   "post-order style aggregate"
+  ],
+  "constraints": "Up to 1e4 nodes, so recursion depth can reach 1e4 on a degenerate tree; Python's default limit is 1000, so an iterative BFS counting levels or an explicit stack is safer.",
+  "confusable": "Minimum depth is not the mirror image: a node with one child must not count the missing child as a leaf (111 Minimum Depth), and beginners copy the max formula and get it wrong.",
+  "variants": [
+   "If asked for minimum depth, BFS to the first leaf or handle single-child nodes specially (111)",
+   "If asked whether the tree is height-balanced, return height and a flag together (110)",
+   "If asked for the longest path between any two nodes, combine left and right depths at each node (543 Diameter of Binary Tree)"
+  ]
+ }
+]

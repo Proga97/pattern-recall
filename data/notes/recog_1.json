@@ -1,0 +1,331 @@
+[
+ {
+  "id": "0107-binary-tree-level-order-traversal-ii",
+  "signals": ["\"level by level\" / \"level order\"", "output grouped by depth", "\"bottom-up\" or \"reverse\" of a standard order", "anything asking for nodes at the same depth together"],
+  "constraints": "Up to 2000 nodes, so any O(n) traversal is fine; the size is small enough that even a per-level reversal or insert-at-front is irrelevant. Tree problems rarely care about n; the hint is the structure, not the size.",
+  "confusable": "Beginners try to design a special bottom-up traversal or recurse by height first; just run the normal top-down BFS and reverse the list of levels, or insert each level at index 0.",
+  "variants": ["Zigzag order (103): same BFS, reverse every other level", "Right side view (199): keep the last node of each level", "Average / largest value per level (637, 515): aggregate over each level list instead of storing it"]
+ },
+ {
+  "id": "0110-balanced-binary-tree",
+  "signals": ["\"height-balanced\" / heights of left and right subtrees", "a property that must hold at EVERY node", "answer depends on a value computed from children (height, size, sum)", "boolean about the whole tree"],
+  "constraints": "5000 nodes rules out the naive approach of recomputing height at every node (O(n^2) in a skewed tree would still pass here, but the intended answer is O(n)). Post-order returning height plus a sentinel is O(n) and works for any n.",
+  "confusable": "The obvious top-down version calls height() from every node, which recomputes subtrees repeatedly; post-order (compute children first, combine, return upward) checks height and balance in one pass.",
+  "variants": ["Diameter of binary tree (543): same post-order height with a global max of left+right", "Maximum depth (104): the height helper alone", "Any 'is the tree X' property where X depends on children: return a tuple (valid, height/size/min/max) per subtree"]
+ },
+ {
+  "id": "0111-minimum-depth-of-binary-tree",
+  "signals": ["\"shortest path\" / \"nearest\" / \"minimum depth\"", "stop at the first node satisfying a condition (\"leaf\")", "unweighted tree or graph where the first hit is the answer", "closest-to-root"],
+  "constraints": "Up to 1e5 nodes, so O(n) is required and recursion depth can hit 1e5 on a skewed tree; BFS avoids stack overflow and also terminates early, which DFS cannot.",
+  "confusable": "Copying maximum depth as min(left, right) + 1 is wrong when a node has only one child (a missing child is not a leaf); also DFS must explore everything while BFS can stop at the first leaf.",
+  "variants": ["Maximum depth (104): DFS/post-order is natural since you must see everything", "Nearest leaf to a given node (742): convert to graph and BFS from that node", "Any 'minimum number of steps' in an unweighted structure: BFS"]
+ },
+ {
+  "id": "0112-path-sum",
+  "signals": ["\"root-to-leaf path\"", "\"sum of values along the path equals target\"", "yes/no existence question on a tree", "a leaf is explicitly defined as a node with no children"],
+  "constraints": "5000 nodes with values in [-1000, 1000] means plain O(n) DFS; no pruning on sign is possible since negatives exist, so you must reach every leaf in the worst case.",
+  "confusable": "Checking remaining == 0 at any node (including internal ones or null children) is the classic mistake; the check must happen only at a leaf, and negative values mean you cannot prune when remaining goes below 0.",
+  "variants": ["Path Sum II (113): return every matching path, so carry the path and backtrack", "Path Sum III (437): paths need not start at root or end at leaf, use prefix-sum hash map along the DFS", "Sum root-to-leaf numbers (129): carry an accumulator down instead of subtracting"]
+ },
+ {
+  "id": "0113-path-sum-ii",
+  "signals": ["\"return all\" paths / \"all root-to-leaf paths\"", "enumerate every solution rather than count or test", "path built from root state that must be undone when returning", "\"list of the node values\""],
+  "constraints": "5000 nodes and output size can be large, but each path is at most tree height; append-recurse-pop keeps it O(n * h) worst case. Values in [-1000, 1000] so no pruning by sign.",
+  "confusable": "Copying the path list at every call (path + [val]) works but costs O(h) per node; the backtracking discipline is push, recurse, pop with a single shared list, copying only when a leaf matches.",
+  "variants": ["Path Sum (112): existence only, drop the path bookkeeping", "Binary tree paths (257): same enumeration with no sum condition", "Subsets / combinations (78, 77): identical push/recurse/pop shape on an array"]
+ },
+ {
+  "id": "0115-distinct-subsequences",
+  "signals": ["\"number of distinct subsequences\" of one string equal to another", "two strings to align (s and t)", "count ways, not find one", "subsequence means skip allowed in s, no skip in t"],
+  "constraints": "Both lengths up to 1000, so an O(|s| * |t|) = 1e6 table is the intended solution; anything exponential over subsequences is out. Use a 2D DP or a 1D rolling row over t.",
+  "confusable": "Looks like LCS or edit distance, but the transition is asymmetric: you may always skip s[i], and only when s[i] == t[j] may you also consume both; carrying the built string or generating subsequences blows up exponentially.",
+  "variants": ["Is Subsequence (392): existence only, greedy two pointers", "Edit Distance (72) / LCS (1143): same two-string (i, j) grid with different transitions", "Number of matching subsequences (792): many small t's against one s, use bucketed pointers"]
+ },
+ {
+  "id": "0116-populating-next-right-pointers-in-each-node",
+  "signals": ["\"next pointer\" to the node on the same level", "\"perfect binary tree\" / every parent has two children", "connect siblings/cousins horizontally", "level-based linking"],
+  "constraints": "Up to 2^12 - 1 nodes, so any O(n) works; the follow-up asks for O(1) extra space, and the perfect-tree guarantee is exactly what makes the level-walking trick via existing next pointers possible.",
+  "confusable": "Beginners reach for a queue-based BFS with a level list, which is fine but O(w) space; the perfect-tree constraint is a hint that the previous level's next pointers already give you the traversal order for free.",
+  "variants": ["Version II (117): tree not perfect, use a dummy head per level", "Level order traversal (102): same BFS without linking", "Cousins in binary tree (993): compare depth and parent instead of linking"]
+ },
+ {
+  "id": "0117-populating-next-right-pointers-in-each-node-ii",
+  "signals": ["\"next pointer\" to the next right node", "arbitrary binary tree (no perfect-tree guarantee)", "link nodes across a level left to right", "O(1) space follow-up on a tree"],
+  "constraints": "6000 nodes, O(n) BFS is fine. The absence of the perfect-tree guarantee means the child-linking must handle missing children, which is why a dummy head and a tail pointer per level are used for the O(1)-space version.",
+  "confusable": "Reusing the version-I trick (node.left.next = node.right, node.right.next = node.next.left) breaks when children are missing; either fall back to queue BFS or build each next level with a dummy head.",
+  "variants": ["Version I (116): perfect tree lets you skip the dummy head", "Right side view (199): last node of each level is the one whose next is null", "Flatten a linked-list of levels: same dummy-head chaining idea"]
+ },
+ {
+  "id": "0121-best-time-to-buy-and-sell-stock",
+  "signals": ["\"buy\" on one day, \"sell\" on a later day, one transaction", "maximize difference a[j] - a[i] with i < j", "\"in the future\" ordering constraint", "single pass with a running min or max"],
+  "constraints": "1e5 prices rules out checking every (i, j) pair (1e10); one pass tracking the running minimum is O(n). Prices are non-negative and small, but that does not matter for the approach.",
+  "confusable": "It looks like a max-minus-min problem, but the max must come AFTER the min; also it is not Kadane on prices, it is Kadane on daily differences, which is the same as the running-min trick.",
+  "variants": ["Stock II (122): unlimited transactions, sum every positive daily difference", "Stock III / IV (123, 188): at most k transactions, DP over states (transactions, holding)", "Stock with cooldown / fee (309, 714): state-machine DP"]
+ },
+ {
+  "id": "0124-binary-tree-maximum-path-sum",
+  "signals": ["\"path\" in a tree that \"does not need to pass through the root\"", "path may bend at a node (left + node + right)", "maximize a value over all paths", "negative values allowed so subtrees can be discarded"],
+  "constraints": "3e4 nodes and values in [-1000, 1000]; O(n) post-order is required and negatives are the whole point: you must clamp a child's contribution to 0 rather than always including it.",
+  "confusable": "Beginners return left + node + right up the recursion, which lets a path fork twice; the value returned upward must be the best single-branch gain, while the forked sum only updates the global answer.",
+  "variants": ["Diameter of binary tree (543): same shape with edge counts instead of sums", "Longest univalue path (687): same shape with a condition on equal values", "Longest path in a tree with a constraint on the bend (e.g. zigzag 1372): return per-direction values"]
+ },
+ {
+  "id": "0125-valid-palindrome",
+  "signals": ["\"reads the same forward and backward\"", "compare from both ends inward", "\"ignore\" or \"skip\" certain characters", "in-place check on a string without building a filtered copy"],
+  "constraints": "2e5 characters means O(n) time; building a filtered lowercase string is also O(n) and passes, but the two-pointer version is O(1) extra space, which is the point of the pattern.",
+  "confusable": "Filtering and comparing to the reverse is the easy way and works, but it uses O(n) extra space; also forgetting that digits count as alphanumeric.",
+  "variants": ["Valid Palindrome II (680): allow one deletion, branch once when a mismatch is found", "Longest palindromic substring (5): expand from the center rather than from the ends", "Reverse vowels / reverse words: same two-ended pointer motion with a skip condition"]
+ },
+ {
+  "id": "0128-longest-consecutive-sequence",
+  "signals": ["\"consecutive\" values (not consecutive positions)", "\"unsorted array\" with an explicit \"O(n)\" demand", "membership questions like 'is x - 1 present'", "longest run of x, x+1, x+2..."],
+  "constraints": "1e5 elements and values up to 1e9: sorting gives O(n log n) which passes but violates the stated O(n); values too large to index a counting array, so a hash set is the tool. Starting only from run starts keeps it linear.",
+  "confusable": "Sort-then-scan is the reflex and is accepted, but the problem explicitly asks for O(n); also walking up from every element without the 'x - 1 not in set' check degrades to O(n^2).",
+  "variants": ["Sort then scan adjacent differences: if O(n log n) is allowed", "Union-Find on x and x+1: same idea, more machinery", "Longest consecutive sequence in a binary tree (298): DFS carrying the run length"]
+ },
+ {
+  "id": "0129-sum-root-to-leaf-numbers",
+  "signals": ["\"root-to-leaf path represents a number\"", "accumulate a value along the path (digits, product, string)", "combine results over all leaves", "the accumulator is built top-down, the total is summed bottom-up"],
+  "constraints": "At most 1000 nodes and depth <= 10 guarantees the numbers fit in a 32-bit int; plain O(n) DFS, recursion depth trivially safe.",
+  "confusable": "Collecting all paths as lists and then converting is O(n * h) extra work; carry the running number as a parameter (curr * 10 + val) and only materialize it at leaves.",
+  "variants": ["Path Sum (112): same top-down accumulator with subtraction instead of digit append", "Binary tree paths (257): accumulate a string instead of a number", "Sum of root-to-leaf binary numbers (1022): curr * 2 + val"]
+ },
+ {
+  "id": "0130-surrounded-regions",
+  "signals": ["grid with regions that touch the \"edge\" or \"border\"", "\"surrounded\" / \"enclosed\" / cannot escape", "in-place modification of a matrix", "connected components in 4 directions"],
+  "constraints": "m, n <= 200 so a full O(mn) flood fill (40k cells) is trivial; recursion depth can reach 40k on a large 'O' region, so iterative DFS/BFS is safer in Python.",
+  "confusable": "Flood-filling each interior region and checking whether it touches the border is correct but awkward; invert the question: flood from the border to mark what is safe, then everything unmarked is captured.",
+  "variants": ["Number of enclaves (1020): same border flood, count unmarked land", "Pacific Atlantic water flow (417): flood from two borders and intersect", "Number of islands (200): count components without the border condition"]
+ },
+ {
+  "id": "0131-palindrome-partitioning",
+  "signals": ["\"partition\" a string into pieces", "\"return all possible\" partitions", "each piece must satisfy a predicate (palindrome)", "choose a cut point, recurse on the rest"],
+  "constraints": "s.length <= 16 is the giveaway: 2^15 possible cut sets, so exponential backtracking is intended. Precomputing an isPalindrome[i][j] table (16x16) makes each check O(1).",
+  "confusable": "Looks like it wants DP because of 'palindrome' and 'partition', but the ask is to enumerate ALL partitions, which is inherently exponential; DP only helps for counting or minimizing.",
+  "variants": ["Palindrome Partitioning II (132): minimum cuts, now it IS a DP", "Word Break II (140): same cut-and-recurse with a dictionary predicate", "Restore IP addresses (93): partition into exactly 4 valid pieces"]
+ },
+ {
+  "id": "0133-clone-graph",
+  "signals": ["\"deep copy\" / \"clone\" of a linked structure", "nodes reference each other (neighbors, random pointers)", "graph may have cycles so plain recursion would loop", "map original to copy"],
+  "constraints": "At most 100 nodes and the graph is connected, so O(V + E) DFS or BFS is trivial; the constraint about no self-loops and unique values just simplifies the map keys.",
+  "confusable": "Creating the clone after recursing into neighbors causes infinite recursion on cycles; the clone must be created and stored in the map BEFORE visiting neighbors.",
+  "variants": ["Copy list with random pointer (138): same old-to-new map on a linked list", "Clone a tree: no map needed since there are no cycles", "Clone N-ary tree (1490): identical, children instead of neighbors"]
+ },
+ {
+  "id": "0136-single-number",
+  "signals": ["\"every element appears twice except one\"", "\"constant extra space\" demanded together with linear time", "pairs cancel out", "XOR identities x ^ x = 0, x ^ 0 = x"],
+  "constraints": "3e4 elements and the explicit O(1)-space requirement kills the hash map/set approach even though it passes; XOR is the only way to meet both bounds.",
+  "confusable": "A counter or set is the natural first thought and is accepted, but it uses O(n) space; the 'exactly twice' guarantee is the hint that XOR cancellation works.",
+  "variants": ["Single Number II (137): every other element appears three times, count bits mod 3", "Single Number III (260): two singles, XOR all then split by a set bit", "Missing number (268): XOR indices against values"]
+ },
+ {
+  "id": "0141-linked-list-cycle",
+  "signals": ["\"cycle\" in a linked list", "\"reached again by continuously following next\"", "constant-space detection", "sequence defined by f(x) repeatedly"],
+  "constraints": "1e4 nodes, so even a visited-set O(n) approach passes; the follow-up asks for O(1) memory, which is what slow/fast delivers.",
+  "confusable": "Storing visited nodes in a set works but costs O(n) space; also checking fast.next is null before fast.next.next is the usual crash.",
+  "variants": ["Linked List Cycle II (142): find the cycle entry with the second phase", "Happy number (202): the same detection on an implicit sequence", "Find the duplicate number (287): treat array values as next pointers"]
+ },
+ {
+  "id": "0142-linked-list-cycle-ii",
+  "signals": ["\"return the node where the cycle begins\"", "\"do not modify the linked list\"", "find the entry point, not just existence", "duplicate value in an array of 1..n interpreted as a pointer"],
+  "constraints": "1e4 nodes, O(n) time; the 'do not modify' rule blocks marking nodes and the O(1)-space follow-up blocks the set, leaving Floyd's two-phase walk.",
+  "confusable": "After detecting a cycle with slow/fast, beginners stop or count cycle length; the trick is resetting one pointer to head and moving both one step until they meet at the entry.",
+  "variants": ["Linked List Cycle (141): existence only, phase one", "Find the duplicate number (287): same two-phase algorithm on array indices", "Intersection of two linked lists (160): different two-pointer trick, not a cycle"]
+ },
+ {
+  "id": "0143-reorder-list",
+  "signals": ["interleave front and back of a list: L0, Ln, L1, Ln-1", "\"may not modify the values\" only the nodes", "needs the middle and the reversed second half", "in-place rearrangement of a singly linked list"],
+  "constraints": "5e4 nodes; the array-of-nodes approach is O(n) space and passes, but the intended O(1)-space solution combines three linked-list primitives: find middle, reverse, merge.",
+  "confusable": "Dumping nodes into an array and re-linking by index is easy but O(n) extra space; the constant-space route is a composition of slow/fast midpoint, in-place reverse, and alternate merge.",
+  "variants": ["Palindrome linked list (234): same middle + reverse, then compare instead of merge", "Reverse linked list (206) and middle of linked list (876): the two building blocks", "Odd-even linked list (328): a different in-place re-linking pattern"]
+ },
+ {
+  "id": "0146-lru-cache",
+  "signals": ["\"design a data structure\" with get/put", "\"least recently used\" / \"evict\"", "\"O(1)\" for every operation", "need ordering by recency plus keyed lookup"],
+  "constraints": "2e5 calls with capacity up to 3000: an O(capacity) scan per operation would be 6e8, too slow; the O(1) requirement forces hash map plus doubly linked list (or an ordered dict).",
+  "confusable": "Using a plain list or array to track recency makes moving an item to the front O(n); a doubly linked list gives O(1) unlink, and the map points directly at nodes.",
+  "variants": ["LFU cache (460): frequency buckets, each a doubly linked list", "Design HashMap / HashSet (706, 705): hashing without recency", "Any 'most recently used' or 'time-ordered eviction' design: same map + ordered list"]
+ },
+ {
+  "id": "0148-sort-list",
+  "signals": ["\"sort\" a \"linked list\"", "O(n log n) time with O(1) or O(log n) space follow-up", "no random access so quicksort/heap are awkward", "split in half, sort, merge"],
+  "constraints": "5e4 nodes: O(n^2) insertion sort is ~2.5e9 comparisons, too slow; O(n log n) merge sort is required and merge sort is the natural choice because linked lists merge in O(1) extra space.",
+  "confusable": "Copying values to an array, sorting, and writing back is O(n) extra space; also quicksort on a linked list is painful because partitioning needs random access.",
+  "variants": ["Merge two sorted lists (21): the merge step alone", "Merge k sorted lists (23): divide and conquer over lists or a heap", "Insertion sort list (147): the O(n^2) baseline"]
+ },
+ {
+  "id": "0153-find-minimum-in-rotated-sorted-array",
+  "signals": ["\"sorted\" then \"rotated\"", "\"O(log n)\" demanded", "find the pivot / smallest element", "compare mid to an endpoint to decide which half is sorted"],
+  "constraints": "n <= 5000 means a linear scan passes, but the statement explicitly demands O(log n), so binary search on the rotation is intended; unique values guarantee the mid-vs-right comparison is decisive.",
+  "confusable": "Standard binary search needs a monotonic predicate; here nums[mid] < nums[right] is the monotonic test, not nums[mid] < target, and comparing to the left end is ambiguous.",
+  "variants": ["Version II (154): duplicates allowed, shrink right by one when nums[mid] == nums[right]", "Search in rotated sorted array (33): find a target by identifying the sorted half", "Peak element (162): binary search on a different monotone-ish predicate"]
+ },
+ {
+  "id": "0155-min-stack",
+  "signals": ["\"stack\" with an extra query (\"min\", \"max\") in \"constant time\"", "\"design\" with push/pop/top plus one aggregate", "aggregate must be undone on pop", "LIFO structure"],
+  "constraints": "3e4 calls and the explicit O(1)-per-op requirement rules out scanning the stack for the min on each getMin (O(n) each); an auxiliary min stack costs O(1) per op and O(n) space.",
+  "confusable": "Keeping a single running minimum breaks on pop (you cannot recover the previous min); the fix is a parallel stack (or pairs) storing the min at each depth.",
+  "variants": ["Max stack (716): same idea plus a popMax, needs a treemap or lazy deletion", "Min queue: two min stacks forming a queue", "Stack with O(1) frequency lookup (895 Maximum Frequency Stack): stacks per frequency"]
+ },
+ {
+  "id": "0164-maximum-gap",
+  "signals": ["\"maximum difference between successive elements in sorted form\"", "\"linear time and linear extra space\" demanded", "values bounded but large", "pigeonhole: n - 1 buckets guarantee the answer straddles a bucket gap"],
+  "constraints": "1e5 elements with values up to 1e9: comparison sort is O(n log n) and passes, but the stated linear-time requirement points to radix sort or bucket sort; values up to 1e9 rule out counting sort by value.",
+  "confusable": "Sorting then scanning is the obvious answer and is accepted, but it is not linear; the bucket trick works only because the maximum gap is at least (max - min) / (n - 1), so no answer lies inside a bucket.",
+  "variants": ["Contains duplicate III (220): buckets of width t to test near-equality", "Radix sort: another linear-time route for bounded integers", "Minimum absolute difference (1200): sort then scan, no trick needed"]
+ },
+ {
+  "id": "0167-two-sum-ii-input-array-is-sorted",
+  "signals": ["\"sorted\" array + \"target\" sum", "\"constant extra space\" demanded", "find a pair (i < j)", "moving one end changes the sum monotonically"],
+  "constraints": "3e4 elements, O(n^2) is borderline and the O(1)-space rule blocks the hash map; the sorted guarantee is what makes the opposite-ends two-pointer sweep O(n) and space-free.",
+  "confusable": "Reaching for the hash map from Two Sum (1) ignores the sortedness and violates the space constraint; binary search per element also works but is O(n log n).",
+  "variants": ["Two Sum (1): unsorted, use a hash map", "3Sum / 4Sum (15, 18): sort then fix one element and run this two-pointer inside", "Count pairs with sum less than target: same pointers, add (j - i) to the count"]
+ },
+ {
+  "id": "0169-majority-element",
+  "signals": ["\"appears more than n/2 times\"", "\"majority\" / dominant element guaranteed to exist", "O(1) space follow-up", "cancel pairs of different elements"],
+  "constraints": "5e4 elements with values up to 1e9: a hash map count is O(n) time and space and passes; the strict-majority guarantee is what makes Boyer-Moore voting correct in O(1) space.",
+  "confusable": "Counting with a hash map or sorting and taking the middle element both work, but the 'more than half' guarantee is a hint that pairwise cancellation leaves the majority standing without any extra memory.",
+  "variants": ["Majority Element II (229): more than n/3, keep two candidates", "Without the guarantee: run voting then verify with a second count pass", "Sort and return nums[n // 2]: O(n log n) alternative"]
+ },
+ {
+  "id": "0173-binary-search-tree-iterator",
+  "signals": ["\"iterator\" over an \"in-order traversal\"", "next() and hasNext() must be lazy", "O(h) memory follow-up", "produce sorted values one at a time from a BST"],
+  "constraints": "1e5 nodes and 1e5 calls: flattening to an array is O(n) memory and passes, but the stated goal is O(h) memory with amortized O(1) next(), which is exactly the left-spine stack.",
+  "confusable": "Doing a full in-order traversal into a list in the constructor is the shortcut and violates the O(h) intent; the stack version pushes only the left spine and lazily expands right subtrees.",
+  "variants": ["Kth smallest in BST (230): the same stack, stop after k pops", "Peeking iterator (284): wrap any iterator with a one-item buffer", "Flatten nested list iterator (341): lazy stack over nested structures"]
+ },
+ {
+  "id": "0198-house-robber",
+  "signals": ["\"cannot pick two adjacent\" elements", "maximize a sum with a spacing constraint", "\"take or skip\" at each position", "optimal answer for prefix i depends on prefixes i-1 and i-2"],
+  "constraints": "n <= 100 and values <= 400: tiny, so even exponential recursion with memo passes; the point is the O(n) recurrence with two rolling variables.",
+  "confusable": "Greedy (rob every other house, or compare odd vs even sums) fails on inputs like [2, 1, 1, 2]; the take/skip decision needs DP.",
+  "variants": ["House Robber II (213): circular street, run twice excluding first or last", "House Robber III (337): tree version, return (rob, skip) per subtree", "Delete and earn (740): bucket by value, then this exact recurrence"]
+ },
+ {
+  "id": "0199-binary-tree-right-side-view",
+  "signals": ["\"seen from the right/left side\"", "one representative per level (first, last, max, average)", "\"ordered from top to bottom\"", "level-based selection"],
+  "constraints": "Up to 100 nodes, size is irrelevant; the level-by-level structure is the whole hint. Either BFS keeping the last of each level or DFS visiting right first and recording the first node at each new depth.",
+  "confusable": "Following only right children misses nodes visible through a longer left branch; you need all levels, not the rightmost path.",
+  "variants": ["Left side view: first node per level or DFS left-first", "Find largest value in each tree row (515): same BFS with max", "Bottom-left value (513): last level's first node"]
+ },
+ {
+  "id": "0200-number-of-islands",
+  "signals": ["\"grid\" of land/water, 0/1, or characters", "\"connected\" horizontally and vertically (4-directional)", "count \"islands\" / components / regions", "mark visited by mutating the grid"],
+  "constraints": "300 x 300 = 9e4 cells so O(mn) BFS/DFS is fine; recursive DFS can reach 9e4 depth on a grid full of land, which is why iterative BFS or a raised recursion limit matters in Python.",
+  "confusable": "Counting every '1' cell, or scanning rows without flood-filling, overcounts; each new unvisited land cell must trigger a full component sink so it is counted once.",
+  "variants": ["Max area of island (695): same flood fill returning component size", "Number of islands II (305): incremental additions, use Union-Find", "Surrounded regions (130): flood from the border instead"]
+ },
+ {
+  "id": "0202-happy-number",
+  "signals": ["\"repeat the process until\" it reaches a fixed value \"or loops endlessly\"", "deterministic f(x) iterated", "detect a cycle in an implicit sequence", "digit manipulation"],
+  "constraints": "n up to 2^31 - 1, but the digit-square sum of any such number is at most 9^2 * 10 = 810, so the sequence quickly enters a small range; a seen-set is tiny, and slow/fast gives O(1) space.",
+  "confusable": "Fearing the huge input, beginners look for a math formula; the sequence collapses into a small range, so plain cycle detection (set or Floyd) is all that is needed.",
+  "variants": ["Linked list cycle (141): the same Floyd detection on pointers", "Find the duplicate number (287): Floyd on array-index sequence", "Collatz-style 'does this process terminate' questions: seen-set with a bound argument"]
+ },
+ {
+  "id": "0206-reverse-linked-list",
+  "signals": ["\"reverse\" a \"singly linked list\"", "re-point next pointers in place", "prev/curr/next triple", "sub-step of many harder list problems"],
+  "constraints": "5000 nodes; iterative O(n) with O(1) space is the standard; recursion also works at this depth but would overflow near 1e5 in Python.",
+  "confusable": "Losing the rest of the list by overwriting curr.next before saving it; also recursion is elegant but the iterative three-pointer version is what other problems compose.",
+  "variants": ["Reverse Linked List II (92): reverse only positions left..right, needs a pre-node", "Reverse nodes in k-group (25): reverse in chunks", "Palindrome linked list (234) / Reorder list (143): reverse the second half"]
+ },
+ {
+  "id": "0207-course-schedule",
+  "signals": ["\"prerequisites\" / \"must take b before a\"", "\"can you finish\" / \"is it possible\" to order tasks", "directed dependency pairs", "the question is really 'does the directed graph have a cycle'"],
+  "constraints": "2000 nodes and 5000 edges means O(V + E) DFS or Kahn's is trivial; recursion depth up to 2000 is safe. Any algorithm that is polynomial passes, but cycle detection is the natural fit.",
+  "confusable": "Using a single visited set (as in undirected graphs) reports false cycles on diamonds; directed cycle detection needs a separate 'on current path' state (three colors) or Kahn's in-degree counting.",
+  "variants": ["Course Schedule II (210): return the order, so use Kahn's or post-order reverse", "Course Schedule IV (1462): reachability queries, Floyd-Warshall or DFS per node", "Alien dictionary (269): build the edges from word pairs then topo-sort"]
+ },
+ {
+  "id": "0208-implement-trie-prefix-tree",
+  "signals": ["\"prefix\" queries / \"startsWith\"", "\"insert\", \"search\" over a set of strings", "autocomplete, spellcheck, dictionary", "shared prefixes among many words"],
+  "constraints": "Word length up to 2000 and 3e4 calls: each operation is O(L), total 6e7 character steps, fine; a hash set would make startsWith O(total characters) per query, which is the operation a trie makes cheap.",
+  "confusable": "A hash set answers search in O(1) but startsWith requires scanning every word; the trie shares prefixes so both operations walk one path.",
+  "variants": ["Add and Search Words (211): wildcard '.' adds backtracking over children", "Word Search II (212): trie plus grid DFS", "Replace words / longest common prefix: walk the trie and stop at the first end flag"]
+ },
+ {
+  "id": "0209-minimum-size-subarray-sum",
+  "signals": ["\"minimal length\" \"subarray\" (contiguous) with sum \">= target\"", "\"positive integers\" explicitly stated", "shrinkable window: adding elements only increases the sum", "optimize a window size under a monotone condition"],
+  "constraints": "1e5 elements rules out O(n^2) enumeration; positive values make the sum monotone in the window, so a two-pointer window is O(n). The O(n log n) follow-up hints at prefix sums plus binary search.",
+  "confusable": "If the array could contain zeros or negatives the window would not be monotonic; then you would need prefix sums with a monotonic deque (862) instead.",
+  "variants": ["Subarray sum equals k (560): exact sum with negatives, prefix sum + hash map", "Shortest subarray with sum at least K (862): negatives allowed, prefix sums + monotonic deque", "Longest subarray with sum <= target: same window, maximize instead"]
+ },
+ {
+  "id": "0210-course-schedule-ii",
+  "signals": ["\"return the ordering\" that respects \"prerequisites\"", "\"return any valid order\" / \"empty if impossible\"", "directed acyclic dependency graph", "produce a linear order of tasks"],
+  "constraints": "2000 nodes and up to n(n-1) edges (~4e6), so O(V + E) Kahn's is needed and adjacency lists (not matrices per query) keep it linear; building the in-degree array is the key data structure.",
+  "confusable": "Beginners try to sort courses by number of prerequisites or by DFS discovery order; neither is a topological order. Use in-degree peeling or reversed post-order.",
+  "variants": ["Course Schedule (207): yes/no version", "Parallel courses (1136): number of BFS layers in Kahn's = minimum semesters", "Sort items by groups respecting dependencies (1203): two-level topo sort"]
+ },
+ {
+  "id": "0211-design-add-and-search-words-data-structure",
+  "signals": ["\"dots can be matched with any letter\" / wildcard search", "\"add\" and \"search\" words in a dictionary", "pattern matching over a set of strings", "branch on a wildcard"],
+  "constraints": "Word length <= 25 and at most 2 dots per query: a trie with at most 26^2 branching from the dots is small; 1e4 calls make even a naive per-word regex scan plausible, but the trie is intended.",
+  "confusable": "A hash set cannot handle '.', and grouping words by length then scanning is O(words) per query; the trie limits the search to matching prefixes and only branches at dots.",
+  "variants": ["Implement Trie (208): no wildcards", "Word Search II (212): trie plus DFS over a grid", "Wildcard / regex matching (44, 10): pattern against ONE string, use DP"]
+ },
+ {
+  "id": "0215-kth-largest-element-in-an-array",
+  "signals": ["\"k-th largest\" / \"k-th smallest\"", "\"without sorting\" hint", "top-k of a stream or array", "order statistic, not full order"],
+  "constraints": "1e5 elements: full sort is O(n log n) and passes; a size-k min-heap is O(n log k), and quickselect is average O(n). Values in [-1e4, 1e4] also allow counting sort in O(n + range).",
+  "confusable": "Sorting the whole array is the reflex; a heap of size k avoids ordering everything, and a max-heap of all n elements is the wrong heap direction for top-k.",
+  "variants": ["Kth largest in a stream (703): keep the size-k min-heap alive", "Top K frequent elements (347): count first, then heap or bucket sort", "K closest points (973): same heap keyed on distance"]
+ },
+ {
+  "id": "0217-contains-duplicate",
+  "signals": ["\"appears at least twice\" / \"distinct\"", "membership check while scanning", "duplicate detection in one pass", "no structure to exploit (unsorted, unbounded values)"],
+  "constraints": "1e5 elements with values up to 1e9: nested loops are 1e10, too slow; values are too large for a boolean array, so a hash set (O(n)) or sort-then-adjacent (O(n log n)) is the way.",
+  "confusable": "Comparing every pair is O(n^2); also sorting works but is slower than the set and destroys order if that matters.",
+  "variants": ["Contains Duplicate II (219): duplicate within k indices, sliding-window set", "Contains Duplicate III (220): within k indices and value diff t, buckets or sorted container", "Find all duplicates (442): values in 1..n let you mark in place"]
+ },
+ {
+  "id": "0226-invert-binary-tree",
+  "signals": ["\"invert\" / \"mirror\" / \"swap left and right\"", "apply the same local operation at every node", "structural transformation of a tree", "any traversal order works"],
+  "constraints": "100 nodes; trivially O(n) with any traversal. Recursion depth is not a concern.",
+  "confusable": "Overthinking traversal order: the swap is local, so pre-order, post-order, or BFS all produce the same result; the only bug is forgetting to recurse into both children.",
+  "variants": ["Symmetric tree (101): compare a tree with its mirror instead of building it", "Flip equivalent binary trees (951): compare allowing a swap at each node", "Same tree (100): simultaneous traversal of two trees"]
+ },
+ {
+  "id": "0230-kth-smallest-element-in-a-bst",
+  "signals": ["\"k-th smallest\" in a \"binary search tree\"", "in-order traversal yields sorted order", "stop early after k items", "order statistic on a BST"],
+  "constraints": "1e4 nodes and k <= n: a full in-order into a list is O(n) and passes; the iterative stack version stops after k pops, giving O(h + k), which matters for the follow-up with frequent queries.",
+  "confusable": "Treating it like an array problem (heap or sort) ignores that the BST already provides sorted order via in-order; a heap is O(n log k) for nothing.",
+  "variants": ["BST iterator (173): the same lazy stack as a class", "Kth largest: reverse in-order (right, node, left)", "Frequent queries with modifications: augment nodes with subtree sizes"]
+ },
+ {
+  "id": "0234-palindrome-linked-list",
+  "signals": ["\"palindrome\" on a \"linked list\"", "compare the front with the back of a singly linked structure", "O(1) space follow-up", "find middle + reverse half"],
+  "constraints": "1e5 nodes: copying to an array is O(n) space and passes, but the O(1)-space follow-up forces the slow/fast middle plus in-place reversal of the second half.",
+  "confusable": "The array copy is the easy answer; the constant-space version composes middle-finding and reversal, and must handle odd length by skipping the middle node.",
+  "variants": ["Reorder list (143): same middle + reverse, then merge", "Valid palindrome (125): the two-pointer version on a string", "Middle of the linked list (876) and reverse (206): the building blocks"]
+ },
+ {
+  "id": "0235-lowest-common-ancestor-of-a-binary-search-tree",
+  "signals": ["\"lowest common ancestor\" in a \"BST\"", "ordering property (left smaller, right larger)", "two target values, decide a direction", "walk down from the root without recursion into both sides"],
+  "constraints": "1e5 nodes and values up to 1e9 with unique values: the BST property gives O(h) without visiting the whole tree, and the iterative walk uses O(1) space; no need for parent pointers or paths.",
+  "confusable": "Applying the general-tree LCA (recurse into both subtrees) works but is O(n) and ignores the BST property; the split point where p and q go in different directions is the answer.",
+  "variants": ["LCA of a binary tree (236): no ordering, post-order returning found nodes", "LCA with parent pointers (1650): walk up like intersecting linked lists", "Insert / search in a BST (701, 700): the same directional walk"]
+ },
+ {
+  "id": "0238-product-of-array-except-self",
+  "signals": ["\"except self\" / \"all other elements\"", "\"without using division\"", "combine a left-side aggregate with a right-side aggregate", "\"O(n)\" demanded on something that naively needs nested loops"],
+  "constraints": "1e5 elements rules out O(n^2); values in [-30, 30] with the 32-bit guarantee means overflow is not the concern; the no-division rule forces prefix and suffix products rather than total / nums[i].",
+  "confusable": "Dividing the total product by nums[i] is the reflex, breaks on zeros and is forbidden; prefix times suffix handles zeros naturally.",
+  "variants": ["Prefix sum (range sum query 303): the additive version", "Trapping rain water (42): left-max and right-max arrays, same two-sided sweep", "Minimum operations to make array equal / any 'value from both sides' problem: precompute left and right passes"]
+ },
+ {
+  "id": "0239-sliding-window-maximum",
+  "signals": ["\"window of size k\" moving right", "\"max\" (or min) in each window", "each element enters once and is evicted once", "candidate maintenance with a monotone order"],
+  "constraints": "1e5 elements with k up to n: recomputing the max per window is O(nk) = 1e10, too slow; a monotonic deque is O(n), and a heap with lazy deletion is O(n log n), also fine.",
+  "confusable": "It is a sliding window, but the max is not maintainable by simple add/remove counters; a heap needs stale-index eviction, and the deque works only because dominated elements can be discarded forever.",
+  "variants": ["Shortest subarray with sum at least K (862): monotonic deque on prefix sums", "Sliding window median (480): needs two heaps or a sorted container", "Next greater element (496): monotonic stack, same discard logic without a window"]
+ },
+ {
+  "id": "0240-search-a-2d-matrix-ii",
+  "signals": ["matrix \"sorted\" in each row AND each column", "search for a target", "each comparison must eliminate a row or a column", "staircase walk from a corner"],
+  "constraints": "300 x 300 with values up to 1e9: the staircase walk is O(m + n) = 600 steps; per-row binary search is O(m log n) and also fine; brute force 9e4 also passes, so the intended pattern is judged by elegance, not the limits.",
+  "confusable": "Treating it like Search a 2D Matrix I (74) and doing a single binary search fails because rows are not globally ordered; start at a corner where one direction increases and the other decreases.",
+  "variants": ["Search a 2D Matrix (74): rows globally sorted, one binary search over m*n", "Kth smallest in a sorted matrix (378): binary search on value plus this staircase count", "Count negatives in a sorted matrix (1351): same staircase for counting"]
+ }
+]

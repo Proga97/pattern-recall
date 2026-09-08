@@ -1,0 +1,324 @@
+[
+ {
+  "id": "1763-longest-nice-substring",
+  "signals": ["longest substring satisfying a global property of its character set", "a character that can never belong to any valid answer", "small alphabet (26 letters, case pairs)", "bad element splits the string into independent pieces", "tiny n allowing recursion or brute force"],
+  "constraints": "n <= 100 permits O(n^2) or O(n^3) brute force over all substrings, so any approach passes; the divide and conquer is O(26 n) per level and is the elegant intended solution. The 'split on a forbidden char' trick stays valid up to 1e5 because each level is linear.",
+  "confusable": "Looks like a sliding window on the character counts, but 'nice' is not monotonic (extending a window can turn it nice again), so window shrinking has no valid rule; split on invalid characters instead.",
+  "variants": ["If the property were monotonic under shrinking (e.g. at most k distinct), a sliding window would work (LC 340 / 3090)", "Longest substring where every char appears at least k times (LC 395) uses the same split-on-bad-char recursion", "If you needed the count of nice substrings rather than the longest, enumerate all substrings with a 26-bit mask of seen lower/upper"]
+ },
+ {
+  "id": "1832-check-if-the-sentence-is-pangram",
+  "signals": ["every letter of the alphabet appears", "fixed small alphabet (26 lowercase letters)", "return true/false about coverage", "set membership or presence, not order"],
+  "constraints": "n <= 1000 with a 26-letter alphabet; one pass into a set or a 26-bit mask is O(n) and the check is O(26). Any size of n works since only presence matters.",
+  "confusable": "A beginner may count frequencies with a full hash map and compare counts, but only presence matters; a set (or bitmask reaching (1<<26)-1) is the whole solution.",
+  "variants": ["If asked for the missing letters, iterate a..z and report those absent from the set", "If asked whether two strings share the same character set, compare bitmasks (LC 1239 style)", "If asked for the shortest prefix that is a pangram, scan while tracking the mask until it becomes full"]
+ },
+ {
+  "id": "1838-frequency-of-the-most-frequent-element",
+  "signals": ["at most k operations of +1", "maximize frequency of an element", "order of elements does not matter (subsequence, not subarray)", "cost to raise a group to its max = len*max - sum", "sort then find longest valid window"],
+  "constraints": "n up to 1e5 rules out O(n^2) pair checks; sort in O(n log n) then a monotonic two-pointer window in O(n). Values up to 1e5 and k up to 1e5 mean window sums fit easily in 64-bit.",
+  "confusable": "Beginners try to pick a target value and count how many can reach it with a hash map, but the target must be an existing element and the cheapest group to raise is contiguous in sorted order, which is exactly a sliding window over the sorted array.",
+  "variants": ["If operations could be +1 or -1, the cheapest target is the window median (LC 2968 uses prefix sums plus binary search)", "If asked for max frequency after at most k operations with a fixed target, it is a single window check", "Longest subarray with sum constraint after sorting appears in LC 1004 style problems where sort + window replaces order"]
+ },
+ {
+  "id": "1852-distinct-numbers-in-each-subarray",
+  "signals": ["every subarray of size k", "number of distinct elements", "return an array with one answer per window position", "fixed-size window"],
+  "constraints": "n up to 1e5 rules out recomputing each window in O(k); a frequency map updated by one insert and one remove per step gives O(n) total. Values up to 1e5 allow an array counter instead of a dict.",
+  "confusable": "Looks like it needs a set per window, but rebuilding a set per position is O(nk); maintain a counter and the number of keys with count > 0 incrementally.",
+  "variants": ["If the window were variable-length with at most k distinct, use the shrinking two-pointer window (LC 340, 992)", "If asked for the count of subarrays with exactly k distinct, use atMost(k) - atMost(k-1) (LC 992)", "If asked for the max or min of each size-k window instead, use a monotonic deque (LC 239)"]
+ },
+ {
+  "id": "1854-maximum-population-year",
+  "signals": ["intervals [start, end)", "count how many intervals cover a point", "earliest year with maximum", "small dense coordinate range (1950..2050)", "range add then point query"],
+  "constraints": "Only 100 logs and a 101-year range, so a difference array over years is O(n + range); even brute force over year x logs (1e4) passes. With coordinates up to 1e9 you would compress or sweep sorted events instead.",
+  "confusable": "Beginners loop over every year and every person (fine here), or use a heap for intervals; the direct approach is a difference array: +1 at birth, -1 at death, then prefix sum.",
+  "variants": ["If coordinates were large (1e9), sort start and end events and sweep (LC 253 Meeting Rooms II)", "If asked for the maximum overlap of car trips with capacities, it is the same difference array with weights (LC 1094)", "Range increment queries on an array (LC 370 Range Addition) are the 1D difference array in its pure form"]
+ },
+ {
+  "id": "1887-reduction-operations-to-make-the-array-elements-equal",
+  "signals": ["repeatedly reduce the largest to the next largest", "make all elements equal", "count operations, not simulate them", "each element must pass through every distinct value below it", "sort and count distinct levels"],
+  "constraints": "n up to 5e4 so simulating one operation at a time (up to n * distinct values) is too slow; sort in O(n log n) and count in one pass. Values up to 5e4 allow counting sort as well.",
+  "confusable": "Looks like heap simulation of the operations, but the operation count has a closed form: after sorting descending, element at index i needs as many operations as distinct values smaller than it, so sum the rank of each element.",
+  "variants": ["If elements could only be increased to the next larger value, sort ascending and apply the same counting", "If each operation could reduce all copies of the max at once, the answer is just distinct values minus 1", "Minimum moves to equal array elements (LC 453, 462) also replaces simulation with a formula"]
+ },
+ {
+  "id": "1971-find-if-path-exists-in-graph",
+  "signals": ["bi-directional edges given as pairs", "is there a valid path from source to destination", "connectivity query, no weights, no shortest", "n vertices labeled 0..n-1"],
+  "constraints": "n and edges up to 2e5 so adjacency-list BFS/DFS or union-find is O(n + m); an adjacency matrix (4e10 cells) is impossible, and recursive DFS may hit Python's recursion limit so use an iterative stack.",
+  "confusable": "Beginners reach for Dijkstra or BFS with distances, but only reachability is asked; a plain visited-set traversal or union-find is enough.",
+  "variants": ["If there were many source/destination queries, build union-find once and answer each in near O(1)", "If asked for the number of connected components, run DFS from every unvisited node (LC 323, 547)", "If the edges had weights and you needed the shortest path, switch to Dijkstra (LC 743)"]
+ },
+ {
+  "id": "1979-find-greatest-common-divisor-of-array",
+  "signals": ["greatest common divisor", "of the smallest and largest", "only two elements of the array matter", "single pass for min and max"],
+  "constraints": "n <= 1000 and values <= 1000; a min/max pass is O(n) and Euclid's gcd on values <= 1000 is a handful of steps. Would scale to any size of values since gcd is O(log value).",
+  "confusable": "Beginners compute the gcd of the whole array or loop divisors downward from min; read carefully, only min and max are involved, and math.gcd handles the rest.",
+  "variants": ["If asked for the gcd of the entire array, fold reduce(gcd, nums)", "If asked for the number of subarrays whose gcd equals k, iterate ends and shrink the running gcd (LC 2447)", "Count pairs with gcd 1 (coprime) or lcm questions use lcm(a, b) = a * b // gcd(a, b)"]
+ },
+ {
+  "id": "1991-find-the-middle-index-in-array",
+  "signals": ["sum of elements to the left equals sum to the right", "leftmost index satisfying", "pivot / equilibrium index", "negative values allowed", "total minus prefix gives suffix"],
+  "constraints": "n <= 100 so even O(n^2) recomputation passes, but the O(n) trick is total - left - nums[i]. Values in [-1000, 1000] mean sums can be negative, so use arithmetic, not counts.",
+  "confusable": "Beginners build separate prefix and suffix arrays or recompute sums per index; one running left sum plus the total is enough. It is not two pointers, since sums are not monotonic with negative values.",
+  "variants": ["Identical to LC 724 Find Pivot Index", "If asked for |leftSum - rightSum| per index, output the difference for every i (LC 2574)", "If asked to split into two parts with equal sum after removing one element, enumerate removals with prefix sums"]
+ },
+ {
+  "id": "2058-find-the-minimum-and-maximum-number-of-nodes-between-critical-points",
+  "signals": ["local maxima / local minima", "requires previous and next node", "min and max distance between any two special positions", "linked list, single forward traversal", "record indices of events"],
+  "constraints": "List up to 1e5 nodes so a single O(n) walk is intended; storing only the first, last, and previous critical index gives O(1) extra space, though storing all indices is fine too.",
+  "confusable": "Beginners convert the list to an array and check all pairs of critical points in O(c^2); the min distance between sorted positions is always between neighbors and the max is last minus first.",
+  "variants": ["If the input were an array, it is the same peak/valley scan (LC 162 finds a single peak by binary search, which needs a different property)", "If asked to count critical points only, drop the distance tracking", "Any 'distance between occurrences' question on a stream (e.g. LC 2200 K-distance indices) uses the same recorded-position idea"]
+ },
+ {
+  "id": "2069-walking-robot-simulation-ii",
+  "signals": ["design a class with step/getPos/getDir", "very large step count per call (num up to 1e5)", "movement wraps around a boundary", "state repeats with a fixed period", "reduce steps modulo the cycle length"],
+  "constraints": "Up to 1e4 calls each with num up to 1e5 would be 1e9 single steps if simulated naively; taking num modulo the perimeter 2*(w+h)-4 makes each call O(1) or O(perimeter). Grid up to 100x100 so the perimeter is at most 396.",
+  "confusable": "Looks like a grid simulation to be executed step by step, but the robot never leaves the boundary, so the state space is one cycle; watch the edge case that a multiple of the perimeter leaves the robot at (0,0) facing South.",
+  "variants": ["If the robot could move freely inside the grid with obstacles, simulate literally (LC 874 Walking Robot Simulation)", "If a process repeats with a period you can find, hash states to detect the cycle (LC 957 Prison Cells After N Days)", "If step counts were small and calls many, a precomputed array of perimeter positions answers getPos in O(1)"]
+ },
+ {
+  "id": "2091-removing-minimum-and-maximum-from-array",
+  "signals": ["remove from the front or the back", "minimum number of deletions", "target two specific positions (min and max)", "only a constant number of strategies", "distinct integers"],
+  "constraints": "n up to 1e5 so one pass to locate min and max indices, then O(1) arithmetic over three strategies; no simulation or DP needed.",
+  "confusable": "Looks like DP over the array or a two-pointer deletion simulation, but with only two targets there are exactly three ways to cover them from the ends: all from the left, all from the right, or one from each side.",
+  "variants": ["If deletions were only from the front, the answer is just max(i_min, i_max) + 1", "If you had to remove elements from ends to reach a target sum, use the complement window trick (LC 1658)", "If you needed to remove k specific positions from the ends, sort the positions and the answer is min over splits of left prefix and right suffix"]
+ },
+ {
+  "id": "2156-stone-game-ix",
+  "signals": ["two players alternate, both play optimally", "divisible by 3 (residues mod 3)", "n up to 1e5 rules out game DP over positions", "only counts of each residue matter", "parity of a count decides who is forced"],
+  "constraints": "n up to 1e5 with values up to 1e4 rules out minimax or DP over subsets; the state collapses to three counts (residues 0, 1, 2) so the answer is O(n) counting plus O(1) case analysis.",
+  "confusable": "Looks like the classic stone game DP (LC 877, 1140) over intervals, but stones can be removed from anywhere, so the order is irrelevant; reduce to residue counts and reason about parity of zeros.",
+  "variants": ["If the losing condition were sum divisible by 2, the same residue-count analysis applies with two buckets", "Stone Game problems with positional constraints (take from ends) need interval DP (LC 877, 1690)", "Nim-style games where the state is a small set of counts often reduce to parity or XOR arguments (LC 292)"]
+ },
+ {
+  "id": "2181-merge-nodes-in-between-zeros",
+  "signals": ["linked list with sentinel separators (zeros)", "merge all nodes between consecutive delimiters into one", "sum of a segment", "return modified list, may reuse nodes", "in-place relinking"],
+  "constraints": "Up to 2e5 nodes so a single O(n) traversal with O(1) extra space; values <= 1000 so segment sums stay small. Building a new list is also fine but reuse avoids allocation.",
+  "confusable": "Beginners copy values into an array, split on zeros, and rebuild a new list; the in-place version keeps the first node of each segment as the accumulator and links it to the next segment head.",
+  "variants": ["If delimiters were in a string instead, it is split on a separator and sum each group", "Removing nodes with value X in a list (LC 203) uses the same dummy-head relinking discipline", "If asked to merge every k nodes, reverse-in-groups style pointer handling (LC 25) is the sibling"]
+ },
+ {
+  "id": "2363-merge-similar-items",
+  "signals": ["two lists of [key, weight] pairs", "sum weights for the same key", "return in ascending order by key", "keys unique within each list", "aggregate then sort"],
+  "constraints": "Each list <= 1000 entries and values <= 1000 so a dict accumulation is O(n + m) and the final sort is O(k log k); values <= 1000 also allow a counting array of size 1001 which yields sorted output for free.",
+  "confusable": "Beginners nest loops matching items across lists in O(n*m) or merge sorted lists with two pointers before summing; a single dictionary keyed by value does everything.",
+  "variants": ["If asked for items present in both lists only, intersect the key sets and sum", "If asked for the top-k weights, feed the aggregated dict into a heap (LC 347)", "Merging two sorted pair lists with a two-pointer walk is the sibling when inputs are already sorted and memory is tight (LC 88, 21)"]
+ },
+ {
+  "id": "2384-largest-palindromic-number",
+  "signals": ["form the largest number from digits", "palindrome, digits can be reordered", "no leading zeroes", "count of each digit, use pairs", "greedy from 9 down to 0"],
+  "constraints": "n up to 1e5 digits so building the answer by digit counts (10 buckets) is O(n); generating permutations or checking substrings is out. Result must be built as a string since it can have 1e5 digits.",
+  "confusable": "Beginners try to find the longest palindromic subsequence with DP (O(n^2), too slow) or the longest palindromic substring; here digits may be reordered, so it is pure counting plus greedy placement.",
+  "variants": ["Longest palindrome by character counts (LC 409) is the same pairs plus one middle idea", "If digits could not be reordered you would need palindromic subsequence DP (LC 516)", "If asked to build the smallest palindrome instead, place digits from 0 up but handle leading zeros carefully"]
+ },
+ {
+  "id": "2390-removing-stars-from-a-string",
+  "signals": ["remove the closest character to the left", "left-to-right processing with undo", "star, backspace, or cancel token", "result is unique after all operations", "push/pop"],
+  "constraints": "n up to 1e5 so repeated string deletion (O(n) per star) is O(n^2) and too slow; a stack gives O(n) total. Output length up to 1e5 so join a list rather than concatenating strings.",
+  "confusable": "Beginners find each star and slice the string, which is quadratic; any 'affects the most recent unresolved item' rule is a stack.",
+  "variants": ["Backspace String Compare (LC 844) is the same with '#' and two strings", "Remove all adjacent duplicates (LC 1047) pops when the top equals the current char", "If the star removed the closest character to the right, process from right to left with a stack"]
+ },
+ {
+  "id": "2487-remove-nodes-from-linked-list",
+  "signals": ["remove every node that has a greater value anywhere to its right", "keep elements that are suffix maxima", "next greater element style comparison", "linked list", "non-increasing structure"],
+  "constraints": "Up to 1e5 nodes so the O(n^2) 'for each node scan right' fails; a monotonic stack is O(n), or reverse the list and keep a running max in O(1) space.",
+  "confusable": "Beginners scan forward from each node to look for a bigger one; the survivors are exactly the nodes that are >= everything after them, which is the suffix-maximum scan (reverse, filter by running max, reverse) or a monotonic stack.",
+  "variants": ["Next Greater Element (LC 496, 503) is the array form of the same stack", "If nodes with a greater value to the LEFT were removed, process forward with a running max and no stack", "Daily Temperatures (LC 739) asks for the distance to the next greater instead of removing"]
+ },
+ {
+  "id": "2513-minimize-the-maximum-of-two-arrays",
+  "signals": ["minimize the maximum", "counts up to 1e9 so you cannot enumerate integers", "feasibility check is monotonic in the candidate", "count numbers <= x not divisible by d uses x - x//d", "inclusion-exclusion with lcm"],
+  "constraints": "uniqueCnt up to 1e9 means the answer can reach ~2e9 so simulation is impossible; binary search over the answer with an O(1) feasibility check gives about 31 iterations. Divisors up to 1e5 keep the lcm within 1e10, fine for 64-bit.",
+  "confusable": "Beginners simulate assigning integers one by one with two pointers; the 'minimum possible maximum' phrasing with huge counts is the classic binary-search-on-answer signature.",
+  "variants": ["Nth Magical Number (LC 878) and Ugly Number III (LC 1201) use the same count-by-lcm feasibility inside binary search", "If only one array existed, the answer is closed form: the uniqueCnt-th number not divisible by d", "Any 'minimize the max / maximize the min' with a monotonic check is this family (LC 875, 1011, 410)"]
+ },
+ {
+  "id": "2529-maximum-count-of-positive-integer-and-negative-integer",
+  "signals": ["array sorted in non-decreasing order", "count elements less than / greater than a threshold", "bisect_left and bisect_right", "O(log n) follow-up hint"],
+  "constraints": "n <= 2000 so a linear count passes, but the sorted guarantee plus the follow-up asks for O(log n): bisect_left(nums, 0) counts negatives, n - bisect_right(nums, 0) counts positives.",
+  "confusable": "Beginners loop and count in O(n); the word 'sorted' should trigger binary search for the boundary of a monotone predicate.",
+  "variants": ["Count of elements in a value range in a sorted array is bisect_right(hi) - bisect_left(lo)", "First and last position of a target (LC 34) is the same pair of bisects", "If the array were rotated sorted, first find the pivot (LC 153) then bisect"]
+ },
+ {
+  "id": "2540-minimum-common-value",
+  "signals": ["two arrays sorted in non-decreasing order", "minimum common element", "intersection of sorted sequences", "advance the pointer with the smaller value"],
+  "constraints": "Both arrays up to 1e5 so O(n + m) two pointers or an O(n) set lookup both pass; values up to 1e9 rule out indexing by value. The sorted input is the hint that no extra memory is needed.",
+  "confusable": "Beginners build a set of one array (works, O(n) memory) or do nested loops (O(nm), too slow); the sorted guarantee makes the merge-style walk the intended O(1)-space answer.",
+  "variants": ["Intersection of Two Arrays II (LC 350) is the same walk returning all matches", "If arrays were unsorted, use a set of the smaller array", "If asked for the k-th smallest common element, continue the walk k matches"]
+ },
+ {
+  "id": "2558-take-gifts-from-the-richest-pile",
+  "signals": ["every second choose the pile with the maximum", "repeat k times", "modify the chosen element and put it back", "repeatedly extract the max"],
+  "constraints": "n <= 1000 and k <= 1000 so even sorting each round (1e6 log) passes, but a max-heap gives O((n + k) log n). Values up to 1e9 shrink to 1 within about 5 square roots, so the heap converges quickly.",
+  "confusable": "Beginners re-sort or scan for the max every iteration; 'repeatedly pick the largest and replace it with a smaller value' is the heap signature.",
+  "variants": ["Last Stone Weight (LC 1046) pops two maxima per round", "Maximal Score After Applying K Operations (LC 2530) uses ceil(x/3) instead of sqrt", "If you needed the minimum pile each round, negate nothing and use the default min-heap"]
+ },
+ {
+  "id": "2574-left-and-right-sum-differences",
+  "signals": ["sum of elements to the left / to the right", "answer for every index", "|leftSum - rightSum|", "prefix and suffix sums"],
+  "constraints": "n <= 1000 so O(n^2) passes, but O(n) with a running left sum and total - left - nums[i] is the intended pattern. Values up to 1e5 keep sums under 1e8.",
+  "confusable": "Beginners recompute the two sums per index in O(n^2); recognize it as prefix sum where the right side is derived from the total.",
+  "variants": ["Find Pivot Index (LC 724) and Find Middle Index (LC 1991) ask for where the difference is zero", "Product of Array Except Self (LC 238) is the multiplicative version with prefix and suffix products", "If asked for the number of indices with left > right, the same running sums answer it in one pass"]
+ },
+ {
+  "id": "2643-row-with-maximum-ones",
+  "signals": ["binary matrix", "row with the maximum count of ones", "smallest row index on ties", "row-wise aggregation"],
+  "constraints": "m, n <= 100 so summing each row is O(mn) = 1e4; a strict > comparison in row order handles the tie-breaking without sorting.",
+  "confusable": "Beginners sort rows by count and lose the smallest-index tie rule; a single scan keeping the first strictly larger count is simpler. If rows were sorted, binary search per row would apply, but they are not.",
+  "variants": ["If each row's ones were sorted to the left (LC 1337 Weakest Rows), count ones per row by binary search", "If asked for the column with maximum ones, transpose the loop", "Kth weakest row (LC 1337) adds a heap or sort over (count, index) pairs"]
+ },
+ {
+  "id": "2707-extra-characters-in-a-string",
+  "signals": ["break s into substrings present in a dictionary", "minimum leftover / extra characters", "choose a split point", "optimal partition of a string", "dictionary of words"],
+  "constraints": "s and dictionary lengths <= 50 so O(n^2 * wordCheck) DP is trivial; even at n = 1e3 the O(n^2) DP with a hash set works, and a trie lets you match all words starting at i in one walk instead of trying every j.",
+  "confusable": "Looks like greedy longest-match, but greedy fails because a shorter word can enable a better later split; use 1D DP over positions (Word Break with a cost).",
+  "variants": ["Word Break (LC 139) is the boolean version, Word Break II (LC 140) enumerates splits", "If asked for the minimum number of words to cover s, replace the cost function", "Minimum cuts for palindrome partitioning (LC 132) is the same DP with a different validity check"]
+ },
+ {
+  "id": "2762-continuous-subarrays",
+  "signals": ["count subarrays where max - min <= limit", "every valid window ending at r contributes r - l + 1", "need window max and min under sliding", "monotonic deques", "values are positive, window validity is monotonic"],
+  "constraints": "n up to 1e5 rules out O(n^2) enumeration; two monotonic deques give window max and min in amortized O(1), so O(n) overall. Values up to 1e9 prevent counting by value, though with a bound of 2 you can also use a small frequency map of at most 3 values.",
+  "confusable": "Beginners use a sliding window with a plain max/min variable, which cannot be updated when the left element leaves; you need a structure that supports removal (deque, or a sorted map).",
+  "variants": ["Longest Continuous Subarray With Absolute Diff <= Limit (LC 1438) asks for the longest window instead of the count", "Sliding Window Maximum (LC 239) is the single-deque building block", "If the bound were on sum instead of max - min, a plain prefix window suffices because values are positive"]
+ },
+ {
+  "id": "2785-sort-vowels-in-a-string",
+  "signals": ["some characters stay in place, others are sorted", "permute only a subset of positions", "sort by ASCII (uppercase before lowercase)", "extract, sort, write back"],
+  "constraints": "n up to 1e5 so O(n log n) sort of the vowels is fine; with only 10 possible vowel characters a counting sort makes it O(n). Build the output as a list, not by string concatenation.",
+  "confusable": "Beginners try to swap vowels in place with two pointers, but a full sort of a subsequence cannot be done by local swaps; collect, sort, and refill the same positions.",
+  "variants": ["Reverse Vowels of a String (LC 345) is the two-pointer sibling because reversal only needs swaps", "Sort characters by frequency (LC 451) is sort-with-a-key on the whole string", "If asked to sort only even-indexed positions ascending and odd descending, use the same extract-sort-refill per group"]
+ },
+ {
+  "id": "2944-minimum-number-of-coins-for-fruits",
+  "signals": ["buying item i unlocks the next i items for free", "minimum cost to acquire all", "dp[i] depends on a range dp[i+1..2i+1]", "window minimum over a sliding range", "monotonic deque optimization"],
+  "constraints": "n <= 1000 so the plain O(n^2) DP (each i scans up to i states) passes; the monotonic deque brings it to O(n) and is what you need if n were 1e5.",
+  "confusable": "Looks greedy (buy only the cheapest), but skipping a purchase can be forced by coverage; it is a DP where the transition reads a range minimum, which upgrades to a deque when n is large.",
+  "variants": ["Jump Game II (LC 45) has a similar 'reach i covers up to i + nums[i]' coverage structure", "Constrained Subsequence Sum (LC 1425) is DP with a window max via deque", "If the free range were fixed length k instead of i, it is a standard sliding window minimum DP"]
+ },
+ {
+  "id": "2958-length-of-longest-subarray-with-at-most-k-frequency",
+  "signals": ["longest subarray", "frequency of each element <= k", "adding an element only tightens the constraint", "shrink from the left until valid", "at most"],
+  "constraints": "n up to 1e5 so O(n) sliding window with a hash map counter; values up to 1e9 require a dict rather than an array. k up to n means the window can be the whole array.",
+  "confusable": "Beginners try prefix sums or binary search on length, but 'longest contiguous with an at-most constraint that is monotonic under shrinking' is the classic variable-size sliding window.",
+  "variants": ["Longest substring with at most k distinct (LC 340) or at most two occurrences (LC 3090) are the same skeleton", "If asked to COUNT subarrays with at most k frequency, add r - l + 1 per step", "If asked for the shortest subarray containing each value at least k times, flip to shrink-while-valid (LC 76 style)"]
+ },
+ {
+  "id": "2966-divide-array-into-arrays-with-max-difference",
+  "signals": ["partition into groups of size 3", "difference within a group <= k", "any valid answer accepted", "sorted consecutive elements minimize spread", "return empty if impossible"],
+  "constraints": "n up to 1e5 rules out trying groupings; sort in O(n log n) then check each consecutive triple in O(n). Values up to 1e5 also permit counting sort.",
+  "confusable": "Looks like backtracking over groupings, but after sorting, the greedy consecutive triples are optimal: if the sorted triple fails, no triple containing its endpoints can succeed.",
+  "variants": ["Hand of Straights / Divide Array in Sets of K Consecutive Numbers (LC 846, 1296) need a counter because groups must be consecutive integers", "If groups were pairs with max difference k, sort and pair adjacent elements", "Minimize the max difference of pairs (LC 2616) combines sort with binary search on the answer"]
+ },
+ {
+  "id": "2996-smallest-missing-integer-greater-than-sequential-prefix-sum",
+  "signals": ["longest prefix where each element is previous + 1", "smallest integer >= x missing from the array", "set membership then increment until absent", "tiny n"],
+  "constraints": "n <= 50 and values <= 50, so the prefix scan is O(n) and probing candidates from the prefix sum upward with a set stops within at most n + 1 steps; the total sum is at most 1275 so no overflow or long loops.",
+  "confusable": "Beginners sort the array or use a while loop over a list with 'in' (O(n) per probe); the two-phase structure (compute a threshold, then search upward in a set) is the pattern.",
+  "variants": ["First Missing Positive (LC 41) is the same 'smallest missing' with a threshold of 1 but O(1) space", "Smallest missing multiple of k (LC 3718) probes k, 2k, 3k instead of consecutive integers", "If the prefix condition were nums[j] = 2 * nums[j-1], only the predicate changes"]
+ },
+ {
+  "id": "3069-distribute-elements-into-two-arrays-i",
+  "signals": ["distribute elements between two arrays by a rule", "compare last elements", "step-by-step operations, then concatenate", "distinct integers, tiny n"],
+  "constraints": "n <= 50 so literal simulation is O(n); the rule only inspects the last element of each list so appends are O(1). No optimization needed.",
+  "confusable": "Beginners overthink with sorting or greedy; the statement is a procedure, so just execute it. Note arr1 and arr2 are seeded with the first two elements before the rule applies.",
+  "variants": ["Distribute Elements into Two Arrays II (LC 3072) uses a count-of-greater rule that needs a Fenwick tree or sorted structure", "Split array by a running comparison appears in card-dealing simulations (LC 1441 style building steps)", "If the rule compared sums instead of last elements, keep two running sums"]
+ },
+ {
+  "id": "3074-apple-redistribution-into-boxes",
+  "signals": ["minimum number of boxes / containers", "items can be split across containers", "only the total matters", "pick largest capacities first", "guaranteed feasible"],
+  "constraints": "n, m <= 50 and values <= 50 so sorting capacities is trivial; total apples <= 2500. The sort-descending greedy is O(m log m).",
+  "confusable": "Looks like bin packing (NP-hard) or 0/1 knapsack because there are packs and boxes, but 'apples from the same pack can be split' collapses it to one number; greedy on the largest capacities.",
+  "variants": ["If packs could not be split it becomes bin packing and you would need backtracking with n <= 12 or so", "Maximum Units on a Truck (LC 1710) is the greedy sibling: sort by value density and fill", "Minimum number of coins with unlimited denominations (LC 322) is the DP sibling when values are fixed and not splittable"]
+ },
+ {
+  "id": "3090-maximum-length-substring-with-two-occurrences",
+  "signals": ["maximum length substring", "at most two occurrences of each character", "constraint tightens as you extend right", "shrink until the offending char is back to 2"],
+  "constraints": "n <= 100 so O(n^2) brute force passes, but the sliding window with a 26-entry counter is O(n) and is the transferable technique. Lowercase letters only means an array of 26 counts.",
+  "confusable": "Beginners enumerate every substring and count characters; recognize 'longest contiguous window with an at-most frequency bound' as the same skeleton as longest substring with at most k distinct.",
+  "variants": ["Longest subarray with at most k frequency (LC 2958) is the same window with k in place of 2", "Longest substring without repeating characters (LC 3) is the k = 1 case", "If asked for at most two DISTINCT characters, track distinct count instead of per-char count (LC 159)"]
+ },
+ {
+  "id": "3345-smallest-divisible-digit-product-i",
+  "signals": ["smallest number >= n satisfying a digit property", "product of digits", "brute force from n upward", "a bounded search window (a digit 0 appears within 10 steps)"],
+  "constraints": "n <= 100 and t <= 10 so scanning upward is instant; the key observation that any number ending in 0 has digit product 0 bounds the scan to at most 10 candidates regardless of n.",
+  "confusable": "Beginners look for a number-theory construction, but the guaranteed nearby zero digit makes brute force provably short; scan until the digit product mod t is 0.",
+  "variants": ["If the product had to be non-zero and divisible by t, the search becomes harder and needs digit DP or constructive reasoning (LC 3348 Smallest Divisible Digit Product II)", "Next Greater Element III (LC 556) finds the next permutation of digits rather than scanning", "If asked for the smallest number whose digit SUM is divisible by t, the same bounded scan works because digit sums change by 1 per step"]
+ },
+ {
+  "id": "3536-maximum-product-of-two-digits",
+  "signals": ["maximum product of two digits of n", "may reuse a digit if it appears twice", "track largest and second largest", "digit extraction"],
+  "constraints": "n <= 1e9 so at most 10 digits; one pass over the digits keeping the top two values is O(10). Sorting the digits also passes trivially.",
+  "confusable": "Beginners sort a list of digits, which is fine here but the transferable habit is a single pass tracking the best two candidates (like max and second max of an array).",
+  "variants": ["Max product of two array elements (LC 1464) is the same top-two tracking with (a-1)*(b-1)", "If negatives were allowed (array version, LC 628), also track the two smallest", "If asked for the max product of two digits from two different numbers, track the max digit of each"]
+ },
+ {
+  "id": "3622-check-divisibility-by-digit-sum-and-product",
+  "signals": ["digit sum and digit product of n", "is n divisible by some function of its digits", "peel digits with mod 10 and integer division", "single number, no array"],
+  "constraints": "n <= 1e6 so at most 7 digits; the digit loop is O(log n) and the product stays under 9^7. Any size fits Python ints.",
+  "confusable": "Nothing tricky; beginners may convert to a string and back which is fine, but the divisor sum + product is never zero here because n >= 1 so no division-by-zero guard is required beyond care with 0 digits making the product 0.",
+  "variants": ["Sum of digits versus product of digits difference (LC 1281)", "Self Dividing Numbers (LC 728) checks divisibility by each digit and must skip 0 digits", "Digit-based counts over a range (how many numbers in [1, n] satisfy X) escalate to digit DP when n is 1e18"]
+ },
+ {
+  "id": "3658-gcd-of-odd-and-even-sums",
+  "signals": ["sum of the first n odd / even numbers", "closed-form formulas n^2 and n(n+1)", "gcd of two expressions in n", "consecutive integers are coprime"],
+  "constraints": "n <= 1000 so even summing loops are fine, but the algebra gives O(1): gcd(n^2, n^2 + n) = n. The formula holds for any n so the size is irrelevant.",
+  "confusable": "Beginners generate the two sequences and call gcd, which passes but misses the transfer lesson: recognize arithmetic series formulas and the identity gcd(a, a + b) = gcd(a, b).",
+  "variants": ["Sum of the first n squares or cubes appears in similar closed-form questions (Faulhaber formulas)", "If asked for gcd(sumOdd, sumEven) over a range [l, r], use prefix-sum formulas and Euclid", "Count of numbers coprime to n (Euler phi) is the deeper number-theory sibling"]
+ },
+ {
+  "id": "3693-climbing-stairs-ii",
+  "signals": ["reach step n with jumps of 1, 2, or 3", "cost depends on the landing step and the jump length", "minimum total cost", "dp[i] from a constant number of previous states", "linear recurrence"],
+  "constraints": "n up to 1e5 so the O(3n) DP is intended; O(n^2) transitions would be too slow, and recursion without memoization or with depth 1e5 is out in Python. Costs <= 1e4 keep sums under 1e9 + small squares.",
+  "confusable": "Beginners try greedy (always jump 3 to minimize count), but the squared jump cost and per-step costs interact; only a DP over positions is correct.",
+  "variants": ["Min Cost Climbing Stairs (LC 746) is the same with jumps 1 or 2 and no jump penalty", "Climbing Stairs (LC 70) counts ways instead of minimizing cost", "If jumps could be up to k with k large, use a monotonic deque or segment tree for the range minimum (LC 1696 Jump Game VI)"]
+ },
+ {
+  "id": "3702-longest-subsequence-with-non-zero-bitwise-xor",
+  "signals": ["longest subsequence with an XOR condition", "subsequence means you choose any subset", "whole-array XOR then remove one element", "n up to 1e5 rules out subset enumeration", "answer is n, n-1, or 0"],
+  "constraints": "n up to 1e5 and values up to 1e9 rule out any subset DP; the observation that the answer is n, n-1, or 0 makes it O(n). Would be a linear-basis problem only if the condition were a specific target XOR.",
+  "confusable": "Beginners reach for bitmask DP or a trie over XOR values, but 'longest' with a 'non-zero' condition is almost trivially satisfied: take everything, and if the total XOR is 0, drop any non-zero element.",
+  "variants": ["Maximum XOR of two numbers (LC 421) needs a bit trie when the target is a maximum", "Count subsets with XOR equal to k (LC 1863 style) needs enumeration or DP over the value range", "If asked for the longest subarray (contiguous) with non-zero XOR, use prefix XOR and the first/last position where prefix equals total"]
+ },
+ {
+  "id": "3718-smallest-missing-multiple-of-k",
+  "signals": ["smallest positive multiple of k missing from the array", "set membership probing", "candidates k, 2k, 3k ...", "bounded number of probes (at most n + 1)"],
+  "constraints": "n <= 100, values <= 100, k <= 100 so probing multiples in a set is O(n); the answer is at most k * (n + 1) by pigeonhole so the loop is bounded even for larger inputs.",
+  "confusable": "Beginners sort and scan or loop the array per candidate (O(n^2)); the missing-value family is always 'put everything in a set, walk candidates in order'.",
+  "variants": ["Smallest missing integer >= prefix sum (LC 2996) probes consecutive integers", "First Missing Positive (LC 41) is the O(1)-space version via index marking", "If asked for the smallest missing multiple within a huge range, mark only multiples of k present and probe"]
+ },
+ {
+  "id": "3756-concatenate-non-zero-digits-and-multiply-by-sum-i",
+  "signals": ["concatenate digits with a filter", "digit sum", "treat the number as a string", "product of derived values"],
+  "constraints": "n <= 1e9 so at most 10 digits; string processing is O(10). Result fits easily in Python ints (x < 1e9, sum <= 81).",
+  "confusable": "Nothing deep; beginners may forget the n = 0 or all-zero-digit case where x = 0 and the product is 0, or convert via arithmetic when a string filter is cleaner.",
+  "variants": ["Remove zeros then compare (LC 2119 A Number After a Double Reversal) is a similar digit-string manipulation", "If asked to sort the remaining digits before concatenating, sort the filtered string", "Digit-level questions with n up to 1e18 still work as strings since length is only 19"]
+ },
+ {
+  "id": "3865-reverse-k-subarrays",
+  "signals": ["partition into k equal contiguous blocks", "reverse each block", "n divisible by k", "in-place reversal with two pointers", "block size n / k"],
+  "constraints": "n <= 1000 so any approach passes; in-place two-pointer reversal per block is O(n) with O(1) extra space, which is what matters if n grew to 1e5.",
+  "confusable": "Beginners slice and rebuild with list comprehensions (fine in Python) but the transferable skill is the swap-inward reversal on a range, the building block of rotate and reverse-words problems.",
+  "variants": ["Reverse String II (LC 541) reverses every other block of size k", "Rotate Array (LC 189) is three range reversals", "Reverse Nodes in k-Group (LC 25) is the linked-list version where blocks cannot be indexed"]
+ },
+ {
+  "id": "3875-construct-uniform-parity-array-i",
+  "signals": ["choose per index between the value and a difference with another element", "all odd or all even", "parity reasoning", "return true/false with an always-true or simple case answer"],
+  "constraints": "n <= 100 and distinct values <= 100; no computation is needed since the answer is always true, but if it were not, an O(n) parity count would decide it.",
+  "confusable": "Beginners simulate choices or backtrack over 2^n options; parity questions almost always reduce to counting odds and evens. Here, since n >= 1 and differences flip parity freely, every configuration is achievable.",
+  "variants": ["If the operation were nums1[i] + nums1[j] only, check whether all elements share parity or a mix exists", "Construct Uniform Parity Array II (LC 3876) likely adds constraints that make counts matter", "Any 'make all elements same parity with allowed operations' reduces to whether one odd and one even exist"]
+ },
+ {
+  "id": "3903-smallest-stable-index-i",
+  "signals": ["max of prefix [0..i] minus min of suffix [i..n-1]", "first index satisfying a threshold", "prefix max and suffix min arrays", "two-direction precomputation"],
+  "constraints": "n <= 100 so O(n^2) recomputation of max and min per index passes, but the O(n) technique of a suffix-min array plus a running prefix max is the intended transfer. Values up to 1e9 are fine in ints.",
+  "confusable": "Beginners recompute max(nums[:i+1]) and min(nums[i:]) inside the loop, which is O(n^2) and will not scale; precompute one direction and sweep the other.",
+  "variants": ["Partition Array into Disjoint Intervals (LC 915) uses prefix max <= suffix min to find a split", "Trapping Rain Water (LC 42) uses prefix max and suffix max per index", "If asked for the count of stable indices, the same sweep counts instead of returning the first"]
+ },
+ {
+  "id": "3982-sum-of-integers-with-maximum-digit-range",
+  "signals": ["per-element derived score (max digit - min digit)", "sum of elements achieving the maximum score", "reset on strictly larger, accumulate on tie", "single pass"],
+  "constraints": "n <= 100 and values <= 1e5 so computing digit ranges is O(n * 6); a single pass tracking best score and running sum is O(n).",
+  "confusable": "Beginners do two passes (find max range, then sum) which is fine, or sort by range; the one-pass 'best value with tie accumulation' idiom is what transfers.",
+  "variants": ["Sum of elements with the maximum frequency (LC 3005) is the same reset-on-better, add-on-tie idiom", "Maximum digit product or digit-sum grouping (LC 2342) maps digit sum to best two values", "If asked for the count of elements with maximum digit range, count instead of summing"]
+ }
+]

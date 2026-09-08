@@ -1,43 +1,64 @@
 # Pattern Recall
 
-Anki-style spaced repetition for the LeetCode problems in
-[Proga97/leetcode_dump](https://github.com/Proga97/leetcode_dump).
-Each card asks for the *pattern* and *key idea* first, then reveals the
-trigger, approach steps, complexity, gotcha, and your own solution.
+Spaced repetition for the LeetCode problems in
+[Proga97/leetcode_dump](https://github.com/Proga97/leetcode_dump), built for
+recognising patterns in problems you have *not* seen before.
 
-The app is a single HTML page published as a claude.ai Artifact. Review
-progress lives in the artifact's cloud database, so it syncs across
-phone and laptop as long as you open it from claude.ai.
+**Open it:** https://proga97.github.io/pattern-recall/
 
-Live artifact: https://claude.ai/code/artifact/a1fb7f68-abec-4801-9f89-3b519d9da4b2
+Every card asks for the pattern and the key idea before it shows anything.
+The back gives you the signals that should have fired, what the constraint
+sizes imply, the approach, the pattern it is easy to confuse with, and your
+own accepted solution.
+
+## What is in it
+
+- **Today** — due count, new count, streak, a twelve week heatmap, weakest patterns.
+- **Review** — the spaced repetition queue, SM-2 with Anki style buttons.
+- **Spot the pattern** — a fast multiple choice drill on problem statements, weighted towards your weak patterns. This is the part that trains you for unseen problems.
+- **Library** — every problem and every pattern, with mastery bars.
+- **Playbook** — a constraint-size to complexity table, a phrase to pattern map, an opening checklist, and a code template plus classic bugs for each of 34 patterns.
+
+## Where your progress lives
+
+Nothing runs on a server. The page is one static HTML file.
+
+Progress syncs through a **secret gist on your own GitHub account**. On the
+first device, Settings then Connect GitHub, paste a fine-grained token with
+only the Gists permission, and the page creates the gist. On the next device,
+paste the same token plus the gist id. The token is kept in that browser's
+local storage and is sent only to `api.github.com`.
+
+Writes go to local storage first and the gist second, so the app keeps working
+offline and catches up later. Merges are per document, newest write wins, with
+tombstones so a delete on one device does not come back from another.
+
+If you never connect GitHub, everything still works and stays on one device.
 
 ## Layout
 
 | Path | What |
 |------|------|
-| `scripts/build_problems.py` | Clones/pulls the dump and writes `data/problems.json` (title, difficulty, statement, your code, first-solve date). |
-| `data/notes/*.json` | Pattern notes per problem (patterns, trigger, key idea, approach, complexity, gotcha). Generated once, hand-editable. |
-| `scripts/build_app.py` | Merges problems + notes into `app/template.html` and writes `dist/index.html`. |
-| `app/template.html` | The app source (CSS + JS, no framework). |
-| `dist/index.html` | Built page, the thing that gets published. |
+| `scripts/build_problems.py` | Clones or pulls the dump, writes `data/problems.json`. |
+| `data/notes/chunk_*.json` | Pattern, trigger, key idea, approach, complexity, gotcha. |
+| `data/notes/recog_*.json` | Signals, constraint reading, confusable with, variants. |
+| `data/playbook.json` | The 34 pattern templates. |
+| `app/template.html` | App source, no framework, no build step. |
+| `scripts/build_app.py` | Merges data into the template, writes `docs/` and `dist/`. |
+| `docs/` | What GitHub Pages serves. |
+| `dist/index.html` | The same page as a Claude Artifact fragment. |
 
-## Syncing new problems
+## Adding new solves
 
-Ask Claude Code: **"sync my leetcode deck"**. It will run:
-
-```bash
-python3 scripts/build_problems.py
-python3 scripts/build_app.py
-```
-
-then write notes for any problem that has no entry in `data/notes/`, and
-republish the artifact at the same URL. Progress is untouched by a
-republish. Problems can also be added by hand from the app's Library tab.
+A nightly GitHub Action pulls the dump, rebuilds, and commits if anything
+changed, so new problems appear in the deck on their own. They arrive without
+notes, showing as untagged. To write notes for them, ask Claude Code
+**"sync my leetcode deck"** in this repo, or fill them in from the app:
+Library, open the problem, Edit.
 
 ## Scheduler
 
-SM-2 with Anki-style buttons. New/learning cards: Again or Hard repeat in
-10 minutes, Good graduates to 1 day, Easy to 4 days. Review cards: Again
-lapses (ease -0.2, interval x0.4, relearn), Hard x1.2 (ease -0.15),
-Good x ease, Easy x ease x1.3 (ease +0.15). Ease floor 1.3, start 2.5.
-Daily new-card limit and introduction order are in Settings.
+New and learning cards: Again and Hard repeat in ten minutes, Good graduates to
+one day, Easy to four days. Review cards: Again lapses, ease minus 0.2, interval
+times 0.4. Hard times 1.2 with ease minus 0.15. Good times ease. Easy times ease
+times 1.3 with ease plus 0.15. Ease starts at 2.5 and floors at 1.3.

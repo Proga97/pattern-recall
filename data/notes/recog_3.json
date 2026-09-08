@@ -1,0 +1,331 @@
+[
+ {
+  "id": "0581-shortest-unsorted-continuous-subarray",
+  "signals": ["shortest subarray such that sorting it sorts the whole array", "continuous subarray plus a global sortedness property", "find boundaries where the array stops being non-decreasing", "compare against a sorted copy", "prefix max / suffix min"],
+  "constraints": "n up to 1e4 means O(n log n) via sorting a copy passes comfortably, but the O(n) prefix-max/suffix-min sweep is the intended technique; values up to 1e5 in magnitude are irrelevant to indexing.",
+  "confusable": "Beginners find the first descent from the left and the first ascent from the right and stop, but small elements later in the array can force the left boundary further left; you must compare every element to the running max from the left and running min from the right.",
+  "variants": ["If you only need to know whether the array can be sorted by reversing one segment, same boundary trick plus a reverse check (like 1st half of Check if Array Is Sorted and Rotated 1752)", "If asked for the minimum number of elements to remove to make it sorted, that becomes Longest Increasing Subsequence 300", "If asked to make it sorted by removing one contiguous piece from either end, use Shortest Subarray to be Removed to Make Array Sorted 1574 (two pointers on prefix and suffix)"]
+ },
+ {
+  "id": "0617-merge-two-binary-trees",
+  "signals": ["two trees given", "overlap / combine node by node", "if one node is null use the other", "return a new tree", "same-position pairing of two recursive structures"],
+  "constraints": "Up to 2000 nodes per tree, so a simple O(n) recursion is fine and recursion depth of at most 2000 is safe in most languages; there is no pressure for anything clever.",
+  "confusable": "Some try to serialize both trees to arrays by level and merge, but sparse trees blow up the level array; recursion in lockstep on both roots is simpler and handles missing subtrees naturally.",
+  "variants": ["If asked to check whether two trees are identical rather than merge them, it is Same Tree 100 with the same lockstep recursion", "If one tree must be a subtree of the other, Subtree of Another Tree 572 (lockstep compare at every node)", "If the operation is symmetric mirror comparison of two subtrees of one root, Symmetric Tree 101"]
+ },
+ {
+  "id": "0621-rearrange-string-k-distance-apart",
+  "signals": ["rearrange so same characters are at least distance k apart", "return empty string if impossible", "most frequent item should be placed first", "cooldown before reuse", "greedy with counts"],
+  "constraints": "s up to 3e5 with only 26 letters, so per-position heap operations over at most 26 keys are O(n log 26), effectively linear; k can be 0, which means no restriction and must be special-cased.",
+  "confusable": "Trying backtracking over permutations is hopeless at 3e5; the greedy choice of always placing the highest remaining count is provably safe, with a queue of length k enforcing the cooldown.",
+  "variants": ["With k=2 (no two adjacent equal), it is Reorganize String 767 and the even-index-first fill works without a heap", "If you only need the total time with idle slots instead of the actual order, Task Scheduler 621 has a closed form", "If characters come from a stream and you must output them in order with a cooldown, keep the same heap plus wait-queue design"]
+ },
+ {
+  "id": "0621-task-scheduler",
+  "signals": ["minimum number of intervals / time units", "gap of at least n between same label", "idle allowed", "tasks can be done in any order", "only the frequency of each label matters"],
+  "constraints": "tasks up to 1e4 with 26 labels and n up to 100 means even a simulation with a heap is O(len * log 26); the closed form (maxFreq-1)*(n+1)+countOfMax is O(26) after counting.",
+  "confusable": "It looks like a scheduling / topological problem, but there are no dependencies; the answer depends only on the count distribution, and the most frequent task forms the skeleton of idle-separated slots.",
+  "variants": ["If you must output the actual sequence rather than its length, use a max-heap plus a cooldown queue as in Rearrange String k Distance Apart 358", "If tasks must be done in the given order with cooldown, Task Scheduler II 2365 uses a hash map of next-available time", "If the gap constraint is only on adjacent items (n=1), it reduces to Reorganize String 767"]
+ },
+ {
+  "id": "0628-maximum-product-of-three-numbers",
+  "signals": ["maximum product", "pick exactly three numbers", "negatives present", "sign flips under multiplication", "only extremes matter"],
+  "constraints": "n up to 1e4 rules out O(n^3) triples; sorting at O(n log n) passes, and a single pass tracking the top three and bottom two values gives O(n). Values in [-1000, 1000] keep the product within 32-bit range.",
+  "confusable": "Beginners take the three largest values, which fails when two large negatives multiply to a positive; you must also try min1 * min2 * max1.",
+  "variants": ["If asked for the max product of a contiguous subarray, sign flipping requires tracking both max and min running products: Maximum Product Subarray 152", "If you need the max product of two numbers, only max1*max2 and min1*min2 matter", "If you must pick k numbers for max product, sort and greedily pair negatives from the small end against positives from the large end"]
+ },
+ {
+  "id": "0632-smallest-range-covering-elements-from-k-lists",
+  "signals": ["k sorted lists", "at least one element from each list", "smallest range / minimum window covering all groups", "advance the list holding the current minimum", "merge-like pointer per list"],
+  "constraints": "k up to 3500 lists of at most 50 elements gives about 1.75e5 total elements; a k-way merge with a heap is O(total * log k), well within limits, while trying all pairs of endpoints would be quadratic in total size and too slow.",
+  "confusable": "It looks like a sliding window over one array, and it can be solved that way if you flatten with list labels and sort, but the heap version uses the given sortedness directly; either way the mistake is trying to move the max pointer, only advancing the min list can improve the range.",
+  "variants": ["If it were one array and you need the shortest window containing every distinct type, that is the flattened sliding-window version, like Minimum Window Substring 76", "If you just merge the k lists into one sorted list, Merge k Sorted Lists 23", "If you need the k-th smallest element across sorted rows, Kth Smallest Element in a Sorted Matrix 378 with the same one-pointer-per-row heap"]
+ },
+ {
+  "id": "0637-average-of-levels-in-binary-tree",
+  "signals": ["per level", "average / sum / max of each level", "return an array indexed by depth", "level order", "tree given as root"],
+  "constraints": "Up to 1e4 nodes so O(n) BFS is intended; node values span the full 32-bit range, so sums of a level should be accumulated in a 64-bit type in languages where overflow matters.",
+  "confusable": "DFS also works if you carry depth and accumulate into per-depth buckets, but BFS with a snapshot of the queue length is the natural fit; the mistake is forgetting to snapshot the size before draining the level.",
+  "variants": ["If the output is a list of lists per level, Binary Tree Level Order Traversal 102", "If you want the largest value on each level, Find Largest Value in Each Tree Row 515", "If you want the level with the maximum sum, Maximum Level Sum of a Binary Tree 1161"]
+ },
+ {
+  "id": "0643-maximum-average-subarray-i",
+  "signals": ["contiguous subarray whose length is equal to k", "fixed window size", "maximum sum / average", "add entering element subtract leaving element", "single pass over the array"],
+  "constraints": "n up to 1e5 rules out recomputing each window's sum (O(nk)); the O(n) rolling sum is intended, and since k is fixed the average is maximized when the sum is.",
+  "confusable": "Beginners think about prefix sums, which also works in O(n), but a fixed window needs only a running sum; the trap is confusing this with the variable-length version where averages are not monotone in length.",
+  "variants": ["If the window length is at least k instead of exactly k, Maximum Average Subarray II 644 needs binary search on the answer", "If you want the number of windows with average >= threshold, Number of Sub-arrays of Size K and Average Greater than or Equal to Threshold 1343 (same rolling sum)", "If the array is circular, extend it by k-1 elements and roll the window over the extension"]
+ },
+ {
+  "id": "0645-set-mismatch",
+  "signals": ["numbers from 1 to n", "one duplicated and one missing", "values map to indices", "find the missing / repeated number", "in-place without extra space"],
+  "constraints": "n up to 1e4 so even O(n log n) sorting passes, but the value range 1..n is the signal for cyclic sort or index marking in O(n) with O(1) extra space; math using sum and sum of squares also works with 64-bit arithmetic.",
+  "confusable": "A hash set finds the duplicate but not the missing number without a second pass over 1..n; it is fine at this size but misses the point that values in 1..n are index handles.",
+  "variants": ["If only one number is missing from 1..n, Missing Number 268 (sum or XOR)", "If only the duplicate must be found without modifying the array, Find the Duplicate Number 287 (Floyd cycle detection)", "If several numbers can be missing or duplicated, Find All Numbers Disappeared in an Array 448 and Find All Duplicates 442 use index negation"]
+ },
+ {
+  "id": "0646-maximum-length-of-pair-chain",
+  "signals": ["pairs / intervals with left < right", "chain where each next starts after the previous ends", "maximum number of non-overlapping selections", "select in any order", "you do not need to use all"],
+  "constraints": "n up to 1000 allows O(n^2) LIS-style DP, but the sort-by-end greedy is O(n log n) and correct; endpoint values only go to 1000 in magnitude so no overflow concerns.",
+  "confusable": "It reads like Longest Increasing Subsequence on pairs, and O(n^2) DP would pass here, but because you may reorder pairs freely, activity selection (sort by right endpoint, take greedily) is optimal.",
+  "variants": ["If you must remove the minimum number of intervals to make the rest non-overlapping, Non-overlapping Intervals 435 is the same greedy counted from the other side", "If pairs must keep their given order and both coordinates must increase, it becomes LIS in 2D like Russian Doll Envelopes 354", "If intervals have weights and you maximize total weight, use DP with binary search: Maximum Profit in Job Scheduling 1235"]
+ },
+ {
+  "id": "0647-palindromic-substrings",
+  "signals": ["count palindromic substrings", "contiguous substring", "reads the same backward", "expand around center", "odd and even length centers"],
+  "constraints": "n up to 1000 allows O(n^2) either by expanding from 2n-1 centers or by a boolean DP over (i, j); an O(n^3) check of every substring is too slow, and Manacher's O(n) is unnecessary.",
+  "confusable": "Beginners enumerate all substrings and check each, which is cubic; expanding around a center reuses the inner palindrome so each center costs at most O(n).",
+  "variants": ["If asked for the longest palindromic substring instead of the count, Longest Palindromic Substring 5 uses the same center expansion", "If subsequence rather than substring, Longest Palindromic Subsequence 516 needs interval DP", "If you must cut the string into palindromic pieces, Palindrome Partitioning 131 precomputes this palindrome table then backtracks"]
+ },
+ {
+  "id": "0654-maximum-binary-tree",
+  "signals": ["build a tree recursively from an array", "root is the maximum of the range", "left subtree from the prefix, right from the suffix", "definition given recursively", "split around a pivot element"],
+  "constraints": "n up to 1000 allows the naive O(n^2) recursion (find max in each range); the O(n) monotonic-stack construction exists but the numbers do not require it.",
+  "confusable": "Some try to build it iteratively by inserting elements one by one like a BST, which works only if you use a decreasing monotonic stack; the direct recursive definition is easier to get right.",
+  "variants": ["If elements are appended and the tree must be updated online, Maximum Binary Tree II 998 walks the right spine", "If the tree is built from preorder and inorder lists instead, Construct Binary Tree from Preorder and Inorder Traversal 105 uses the same split-around-root recursion", "If you only need parent pointers (nearest greater on each side), a monotonic stack gives them in O(n)"]
+ },
+ {
+  "id": "0658-find-k-closest-elements",
+  "signals": ["sorted array", "k closest to x", "result is a contiguous block", "distance |a - x|", "ties break toward smaller value"],
+  "constraints": "n up to 1e4 means even sorting by distance in O(n log n) passes, but the sorted input plus a contiguous-window answer invites O(log(n-k) + k) binary search over the window start.",
+  "confusable": "A heap of size k over all elements is O(n log k) and ignores that the input is sorted; also a naive expand-from-nearest approach mishandles ties unless you compare arr[mid] and arr[mid+k] against x directly.",
+  "variants": ["If the array is unsorted, use a heap or quickselect on distance like K Closest Points to Origin 973", "If you need the single closest value in a BST, Closest Binary Search Tree Value 270", "If k closest values are needed from a BST, in-order traversal into a sliding window or two stacks: Closest Binary Search Tree Value II 272"]
+ },
+ {
+  "id": "0662-maximum-width-of-binary-tree",
+  "signals": ["width of a level counting null gaps", "as if in a complete binary tree", "leftmost and rightmost non-null per level", "heap-style indexing 2i and 2i+1", "level order"],
+  "constraints": "Up to 3000 nodes but a skewed tree of depth 3000 gives indices near 2^3000, so use Python big ints or re-base indices per level (subtract the level's first index) to stay in 64-bit.",
+  "confusable": "Counting nodes per level ignores the null gaps the problem explicitly counts; you need positional indices, and the trap is index overflow on deep trees.",
+  "variants": ["If the width is just the number of nodes per level, plain Level Order Traversal 102", "If you need to check completeness of a tree, Check Completeness of a Binary Tree 958 uses the same index numbering", "If asked for the leftmost value on the bottom level, Find Bottom Left Tree Value 513"]
+ },
+ {
+  "id": "0680-valid-palindrome-ii",
+  "signals": ["palindrome after deleting at most one character", "at most one edit / skip", "two ends walking inward", "branch once on the first mismatch", "return true / false"],
+  "constraints": "n up to 1e5 rules out trying every deletion then checking (O(n^2)); the two-pointer scan with a single branch at the first mismatch is O(n).",
+  "confusable": "A DP for longest palindromic subsequence answers the general k-deletion version but is O(n^2), too slow and overkill; with one deletion you only need the two branches at the first mismatch.",
+  "variants": ["If up to k deletions are allowed, count is n minus Longest Palindromic Subsequence 516 (O(n^2) DP)", "If the question is whether removing one character makes a strictly increasing array, Remove One Element to Make the Array Strictly Increasing 1909 has the same branch-at-first-violation shape", "If no deletions are allowed and non-alphanumerics must be skipped, Valid Palindrome 125"]
+ },
+ {
+  "id": "0684-redundant-connection",
+  "signals": ["tree with one additional edge", "undirected edges", "remove one edge so the result is a tree", "detect the edge that closes a cycle", "return the last such edge in input order"],
+  "constraints": "n up to 1000 nodes and edges, so even re-running DFS per edge (O(n^2)) passes, but union-find with path compression processes edges in near-linear time and naturally reports the last edge that closes a cycle.",
+  "confusable": "DFS cycle detection finds a cycle but not which edge among the cycle occurs last in the input; processing edges in order with union-find gives the tie-break for free.",
+  "variants": ["If the graph is directed with a root, Redundant Connection II 685 must distinguish a node with two parents from a cycle", "If asked how many connected components an edge list forms, Number of Connected Components in an Undirected Graph 323", "If asked whether a given edge list forms a valid tree, Graph Valid Tree 261 (n-1 edges plus no cycles)"]
+ },
+ {
+  "id": "0692-top-k-frequent-words",
+  "signals": ["k most frequent", "sorted by frequency then lexicographical", "strings or keys with counts", "tie-break rule stated", "top-k with custom order"],
+  "constraints": "Only 500 words, so counting then a full sort in O(u log u) is fine; the heap of size k gives O(u log k) and is what an interviewer expects if the input were large; bucket sort by count gives O(u) plus per-bucket sorting.",
+  "confusable": "A max-heap keyed only on count breaks ties wrongly; you need a composite key (-count, word) or a min-heap of size k with reversed comparison so that the alphabetical tie-break is respected when evicting.",
+  "variants": ["If the items are integers with no tie-break, Top K Frequent Elements 347 (bucket sort works cleanly)", "If you need the k-th largest single value, Kth Largest Element in an Array 215 with quickselect", "If frequency must be maintained under a stream of updates, keep a hash map plus a balanced structure or a frequency-bucket list"]
+ },
+ {
+  "id": "0695-max-area-of-island",
+  "signals": ["grid of 0s and 1s", "connected 4-directionally", "island / region / component", "maximum area / count of cells", "flood fill"],
+  "constraints": "Grid at most 50 x 50 (2500 cells), so any O(mn) DFS or BFS is trivial; recursion depth up to 2500 is fine in most languages but iterative BFS avoids stack limits if the grid were larger.",
+  "confusable": "Some reach for union-find, which works but is heavier than needed; the trap is not marking cells visited (or marking them after enqueueing rather than when enqueued in BFS), which double counts.",
+  "variants": ["If you only need to count islands, Number of Islands 200", "If you can flip one 0 to 1 to maximize the largest island, Making A Large Island 827 labels components first then checks neighbors", "If the region must have a specific property like not touching the border, Number of Enclaves 1020 or Number of Closed Islands 1254 flood from the border first"]
+ },
+ {
+  "id": "0702-search-in-a-sorted-array-of-unknown-size",
+  "signals": ["sorted but size unknown", "interactive reader interface", "out-of-bounds returns a sentinel", "O(log n) required", "target lookup in sorted data"],
+  "constraints": "Length up to 1e4 with an out-of-bounds sentinel of 2^31-1 larger than any value, so doubling the high index until reader.get(high) >= target takes at most 14 steps, then ordinary binary search within the found bound.",
+  "confusable": "Beginners scan linearly until the sentinel, which is O(n) and violates the requirement; you need exponential (galloping) search to find a bound in O(log n) before the binary search.",
+  "variants": ["If the size is known, plain Binary Search 704", "If the array is infinite and you need the first index whose value crosses a threshold, use the same doubling then lower_bound", "If the reader is a sorted linked structure without random access, this trick does not apply and you fall back to linear scanning"]
+ },
+ {
+  "id": "0703-kth-largest-element-in-a-stream",
+  "signals": ["stream / real-time / after each add", "k-th largest maintained continuously", "implement a class with add", "only the top k matter", "return value after every insertion"],
+  "constraints": "At most 1e4 adds and up to 1e4 initial values, so a min-heap of size k gives O(log k) per add; re-sorting on each add would be O(n log n) per call and too slow in spirit even if it might pass here.",
+  "confusable": "A max-heap seems natural for 'largest', but you would have to pop k times per query; a min-heap capped at size k keeps the k-th largest at its root in O(1).",
+  "variants": ["If the stream is static and you need the k-th largest once, Kth Largest Element in an Array 215 with quickselect", "If you must maintain the running median instead, use two heaps: Find Median from Data Stream 295", "If the stream is of pairs and you need a sliding window max, that is a monotonic deque instead: Sliding Window Maximum 239"]
+ },
+ {
+  "id": "0704-binary-search",
+  "signals": ["sorted in ascending order", "search target return its index", "O(log n) required", "unique elements", "halve the search space"],
+  "constraints": "n up to 1e4 would even allow a linear scan, but the explicit O(log n) requirement and sorted input mandate binary search; values bounded by 1e4 make mid computation overflow-free in any language.",
+  "confusable": "A hash map gives O(1) lookup but needs O(n) to build and cannot exploit order; the actual trap is off-by-one on the loop condition (lo <= hi vs lo < hi) and the update lo = mid + 1 / hi = mid - 1.",
+  "variants": ["If the target may be absent and you need the insertion index, Search Insert Position 35 (lower_bound)", "If the array is rotated, Search in Rotated Sorted Array 33 picks the sorted half each step", "If you need the first and last occurrence with duplicates, Find First and Last Position 34 with two bound searches"]
+ },
+ {
+  "id": "0713-subarray-product-less-than-k",
+  "signals": ["number of contiguous subarrays", "product strictly less than k", "all elements positive", "count windows ending at each right index", "window property is monotonic as it grows"],
+  "constraints": "n up to 3e4 makes O(n^2) borderline and O(n) two-pointer intended; elements >= 1 guarantee that the product never decreases when the window grows, and k up to 1e6 with values up to 1000 keeps products small once the window is valid.",
+  "confusable": "Prefix products overflow and division is fragile; and if any element could be 0 or negative the window would not be monotonic and you would need a different approach (logs plus prefix sums, or case analysis).",
+  "variants": ["If it were sum < k with positives, identical two-pointer counting", "If the sum equals exactly k with possible negatives, use Subarray Sum Equals K 560 with prefix sums and a hash map", "If you need subarrays with at most k distinct values, Subarrays with K Different Integers 992 uses at-most(k) minus at-most(k-1)"]
+ },
+ {
+  "id": "0729-my-calendar-i",
+  "signals": ["book an event if no double booking", "half-open intervals", "implement a class with repeated inserts", "check overlap with existing", "keep intervals sorted"],
+  "constraints": "Only 1000 calls, so an O(n) scan per booking (1e6 total) passes; start and end up to 1e9 rule out a timeline array, so use a sorted list with bisect or a balanced tree for O(log n) per query.",
+  "confusable": "Beginners try to mark every time unit in a set, but the coordinate range up to 1e9 kills that; you compare against neighbors in a sorted container, or in the difference-array version for higher k you sort event boundaries.",
+  "variants": ["If double booking is allowed but not triple, My Calendar II 731 keeps a second list of overlaps", "If you need the maximum concurrent bookings, My Calendar III 732 uses a sweep line with a difference map", "If all intervals are given up front, Meeting Rooms 252 just sorts and checks adjacent pairs"]
+ },
+ {
+  "id": "0739-daily-temperatures",
+  "signals": ["for each element, how many days until a warmer one", "next greater element to the right", "distance to next greater", "answer 0 if none", "each element resolved once"],
+  "constraints": "n up to 1e5 rules out O(n^2) scanning right from each index; the monotonic decreasing stack of indices is O(n). Temperatures in [30, 100] also allow an O(71 n) reverse scan tracking the nearest index per value.",
+  "confusable": "It looks like a sliding window because the phrase 'days to wait' suggests a range, but there is no fixed window; the stack pops all colder days when a warmer one arrives.",
+  "variants": ["If you need the next greater value rather than distance, Next Greater Element I 496 / II 503 (circular version doubles the index range)", "If you need the previous smaller and next smaller boundaries for each element, Largest Rectangle in Histogram 84", "If you need the number of consecutive previous days with smaller or equal price, Online Stock Span 901 (same stack, kept online)"]
+ },
+ {
+  "id": "0739-next-greater-element-i",
+  "signals": ["next greater element to the right", "first greater element after x", "queries on a subset of another array", "-1 if none", "unique values so a value-to-answer map works"],
+  "constraints": "Both arrays at most 1000, so O(n1 * n2) brute force passes, but the intended O(n1 + n2) is a monotonic stack over nums2 plus a hash map because all values are unique.",
+  "confusable": "Brute force finds each query's position and scans right, fine here but O(n^2); the trap is not noticing that uniqueness lets you key the answer map by value instead of index.",
+  "variants": ["If the array is circular, Next Greater Element II 503 iterates indices twice", "If you need the distance to the next greater, Daily Temperatures 739", "If you need the next greater node in a linked list, Next Greater Node In Linked List 1019 converts to an array first"]
+ },
+ {
+  "id": "0746-min-cost-climbing-stairs",
+  "signals": ["climb one or two steps", "minimum cost to reach the top", "start from index 0 or 1", "each state depends on the previous two", "choose the cheaper of two predecessors"],
+  "constraints": "n up to 1000 and costs under 1000 mean an O(n) DP with two rolling variables; an exhaustive recursion without memo is exponential and fails at n=1000.",
+  "confusable": "Greedy (always take the cheaper next step) fails because a cheap step now can force an expensive one later; the pairwise dependence is a textbook 1D DP.",
+  "variants": ["If you count ways instead of minimizing cost, Climbing Stairs 70", "If you cannot take two adjacent items and maximize value, House Robber 198 has the same recurrence shape", "If jumps can be up to k steps with costs, Min Cost Climbing Stairs generalizes to a sliding-window minimum DP like Jump Game VI 1696"]
+ },
+ {
+  "id": "0759-employee-free-time",
+  "signals": ["several lists of sorted non-overlapping intervals", "common free time / gaps across all", "merge intervals then find gaps", "sweep by start time", "flatten multiple schedules"],
+  "constraints": "At most 50 employees with 50 intervals each (2500 intervals), so flattening and sorting in O(N log N) is trivial; the k-way merge with a heap keeps O(N log k) if the lists were huge and already sorted.",
+  "confusable": "Some try pairwise intersection of employees' free time, which is quadratic in the number of lists and messy; merging all busy intervals then reading the gaps is one pass.",
+  "variants": ["If you have one list and need to merge overlaps, Merge Intervals 56", "If you need the intersection of two sorted interval lists, Interval List Intersections 986 with two pointers", "If you need the number of rooms needed at peak, Meeting Rooms II 253 with a min-heap of end times"]
+ },
+ {
+  "id": "0767-reorganize-string",
+  "signals": ["rearrange so no two adjacent are the same", "return any valid arrangement or empty", "most frequent character bounds feasibility", "fill even indices first", "alternate between high-count items"],
+  "constraints": "n up to 500 with 26 letters, so a heap approach is O(n log 26) and the even/odd fill is O(n); the feasibility test is max count <= (n+1)//2.",
+  "confusable": "Backtracking over permutations explodes even at n=500; the greedy heap (place the most frequent, hold it out for one step) or the direct even/odd placement is provably correct.",
+  "variants": ["If the required gap is k instead of 2, Rearrange String k Distance Apart 358 with a cooldown queue", "If you count minimum idle time rather than build the string, Task Scheduler 621", "If you must alternate two categories in an array (e.g., positive and negative), Rearrange Array Elements by Sign 2149"]
+ },
+ {
+  "id": "0771-jewels-and-stones",
+  "signals": ["count how many of A appear in B", "membership test", "small alphabet", "case sensitive characters", "set lookup"],
+  "constraints": "Both strings at most 50, so even O(|jewels| * |stones|) is fine, but the expected O(|jewels| + |stones|) uses a set (or a 128-entry boolean array) for membership.",
+  "confusable": "Nested loops or repeated string.contains calls hide an O(n*m) cost; a set reduces membership to O(1) and is the habit to build.",
+  "variants": ["If you need to check whether one string's letters can build another, Ransom Note 383 uses a count map instead of a set", "If you need the common characters of many words with multiplicity, Find Common Characters 1002 takes the per-letter minimum count", "If you must find the one extra character between two strings, Find the Difference 389 uses XOR or counts"]
+ },
+ {
+  "id": "0783-minimum-distance-between-bst-nodes",
+  "signals": ["BST", "minimum difference between any two node values", "in-order gives sorted order", "compare consecutive values", "track previous visited node"],
+  "constraints": "Up to 100 nodes, so even collecting all values and sorting is fine; the intended O(n) uses in-order traversal with a previous pointer and no extra list.",
+  "confusable": "Comparing each node with its immediate children is wrong (the closest value may be deep in the other subtree); only in-order adjacency guarantees the minimum gap.",
+  "variants": ["Identical problem: Minimum Absolute Difference in BST 530", "If the tree is not a BST, collect all values and sort, then take adjacent differences", "If you need the k-th smallest value in a BST, Kth Smallest Element in a BST 230 uses the same in-order walk"]
+ },
+ {
+  "id": "0785-is-graph-bipartite",
+  "signals": ["can nodes be split into two groups", "no edge inside a group", "2-coloring", "undirected graph possibly disconnected", "adjacency list input"],
+  "constraints": "n up to 100 so O(n + e) BFS/DFS coloring or union-find is trivially fast; the disconnected note means you must start a coloring from every unvisited node.",
+  "confusable": "Beginners check only whether the graph has a cycle, but bipartiteness fails only on odd cycles; alternate colors along edges and report a conflict when a neighbor has the same color.",
+  "variants": ["If the nodes are people with dislikes and you want two groups, Possible Bipartition 886 is the same coloring", "If you need to detect an odd cycle explicitly, the same BFS coloring finds it", "If groups can be more than two (k-coloring), it is NP-hard in general and requires backtracking for small n"]
+ },
+ {
+  "id": "0802-find-eventual-safe-states",
+  "signals": ["directed graph", "every path from the node leads to a terminal", "nodes not on or leading to a cycle", "three-color DFS with in-progress state", "reverse graph plus topological order"],
+  "constraints": "n up to 1e4 and edges up to 4e4, so O(n + e) DFS with memoized states or Kahn's algorithm on the reversed graph is intended; re-running DFS from each node without memo would be O(n(n+e)) and too slow.",
+  "confusable": "A plain visited set conflates 'currently on the stack' with 'fully explored', which misreports safe nodes reachable from a cycle as unsafe or vice versa; you need three states (unvisited, in progress, done).",
+  "variants": ["If the question is just whether the graph has a cycle, Course Schedule 207 with the same coloring or Kahn's algorithm", "If you need the topological order itself, Course Schedule II 210", "If the graph is undirected and you need nodes not on any cycle, peel leaves iteratively like Minimum Height Trees 310"]
+ },
+ {
+  "id": "0815-bus-routes",
+  "signals": ["least number of buses / transfers", "routes as sets of stops", "hop between groups that share an element", "shortest path where the unit cost is a group switch", "stop-to-routes index"],
+  "constraints": "Up to 500 routes but 1e5 total stops with stop ids up to 1e6, so you cannot build a stop-to-stop graph (could be quadratic per route); BFS over the 500 routes with a stop-to-routes hash map is O(total stops) and the intended design.",
+  "confusable": "BFS over individual stops counts stops rather than buses and builds far too many edges; the trick is to make routes the graph nodes so each BFS level equals one more bus.",
+  "variants": ["If cost is number of stops rather than buses, BFS on stops with a stop-to-stop adjacency derived from routes", "If you can teleport between equal values in an array, Jump Game IV 1345 uses the same group-once trick of clearing a value's index list after first use", "If you need minimum transfers with weights, Dijkstra on the route graph"]
+ },
+ {
+  "id": "0833-bus-routes",
+  "signals": ["least number of buses / transfers", "routes as sets of stops", "hop between groups that share an element", "shortest path where the unit cost is a group switch", "stop-to-routes index"],
+  "constraints": "Up to 500 routes and 1e5 total stops with ids up to 1e6, so BFS over routes using a stop-to-routes hash map is O(total stops); additionally marking visited stops guarantees each stop's route list is expanded only once.",
+  "confusable": "Expanding every stop of a route each time it is reached can revisit shared stops repeatedly; mark both routes and stops visited so the traversal stays linear.",
+  "variants": ["If cost is number of stops rather than buses, BFS on stops instead of routes", "If the groups are words differing by one letter, Word Ladder 127 uses wildcard buckets as the group index", "If you need the minimum number of group switches in a matrix of colors, treat each color region as a node"]
+ },
+ {
+  "id": "0844-backspace-string-compare",
+  "signals": ["backspace / delete previous character", "compare two strings after edits", "O(1) extra space follow-up", "process from the end", "skip counter for pending deletions"],
+  "constraints": "Both strings at most 200, so building the edited strings with a stack in O(n) space passes easily; the O(1)-space two-pointer scan from the end is the intended follow-up.",
+  "confusable": "The stack simulation is the obvious approach and is fine, but if space matters you must walk backward because a '#' affects characters to its left, which is why forward two pointers do not work.",
+  "variants": ["If only one string and you need the result after backspaces, plain stack simulation", "If characters can be undone by a different token type, generalize the skip counter per type", "If two strings must be compared under some other transformation, consider a generator or reverse iterator over each string"]
+ },
+ {
+  "id": "0852-peak-index-in-a-mountain-array",
+  "signals": ["increase then decrease", "find the peak", "O(log n) required", "compare mid with mid+1", "answer is monotonic in the index (slope sign)"],
+  "constraints": "n up to 1e5 with an explicit O(log n) requirement, so binary search on the slope (arr[mid] < arr[mid+1] means peak is to the right) is intended; a linear scan for the max is O(n) and disallowed.",
+  "confusable": "Beginners search for a target, but there is none; the predicate is the slope direction, which is false then true, so binary search finds the boundary.",
+  "variants": ["If the array is not guaranteed to be a mountain but any local peak is acceptable, Find Peak Element 162", "If you must find a target in the mountain, Find in Mountain Array 1095 does peak search then two binary searches", "If asked for the longest mountain subarray in an unsorted array, Longest Mountain in Array 845 with two passes"]
+ },
+ {
+  "id": "0874-walking-robot-simulation",
+  "signals": ["execute a sequence of commands", "turn left / right and move forward", "obstacles on a plane", "stay in place when blocked", "track max distance from origin"],
+  "constraints": "Commands up to 1e4 with moves of at most 9, so at most 9e4 unit steps; obstacle coordinates in +-3e4 forbid a dense grid, so store obstacles in a hash set of tuples for O(1) lookup per step.",
+  "confusable": "Some try to compute the move endpoint and check if any obstacle lies between, which is O(obstacles) per move; stepping one unit at a time with a set is both simpler and fast enough.",
+  "variants": ["If asked whether a command sequence repeated forever stays bounded, Robot Bounded In Circle 1041 checks position and direction after one cycle", "If commands are moves on a grid with walls and you count reachable cells, use BFS with a visited set", "If obstacles are dynamic and moves are long, you would need per-row and per-column sorted obstacle lists with binary search"]
+ },
+ {
+  "id": "0885-spiral-matrix-iii",
+  "signals": ["walk in a spiral", "visit every position", "continue outside the boundary", "step lengths grow 1,1,2,2,3,3", "turn clockwise"],
+  "constraints": "Grid at most 100 x 100, so the spiral covers at most about (2*max(rows,cols))^2 cells before all in-grid cells are visited, well within limits; you simply skip out-of-bounds positions.",
+  "confusable": "Beginners try to reuse the four-boundary approach from Spiral Matrix 54, but the start is interior and the walk leaves the grid; direction cycling with a growing run length is the correct model.",
+  "variants": ["If you traverse an existing matrix from the top-left, Spiral Matrix 54 with shrinking boundaries", "If you fill an n x n matrix with 1..n^2 in spiral order, Spiral Matrix II 59", "If you fill a linked list into a spiral grid, Spiral Matrix IV 2326"]
+ },
+ {
+  "id": "0895-maximum-frequency-stack",
+  "signals": ["pop the most frequent element", "ties broken by most recent", "design push and pop", "frequency plus recency", "stack per frequency level"],
+  "constraints": "Up to 2e4 operations with values up to 1e9, so a hash map from value to count plus a hash map from count to stack gives O(1) per operation; a heap keyed on (freq, timestamp) is O(log n) and also passes.",
+  "confusable": "A single max-heap by frequency loses the recency tie-break unless you also store a push timestamp; the frequency-bucket stacks encode both count and order without a heap.",
+  "variants": ["If you must support increment and decrement of keys and return max/min key in O(1), All O`one Data Structure 432 uses a doubly linked list of buckets", "If eviction should be by least frequency with LRU tie-break, LFU Cache 460", "If popping should return the max value rather than most frequent, Max Stack 716 with a balanced structure"]
+ },
+ {
+  "id": "0904-fruit-into-baskets",
+  "signals": ["longest contiguous run with at most two distinct types", "two baskets / two kinds", "start anywhere then go right", "shrink from the left when a third type appears", "frequency map in a window"],
+  "constraints": "n up to 1e5 rules out enumerating start points (O(n^2)); the sliding window with a count map is O(n), and fruit types below n mean an array can replace the map.",
+  "confusable": "It is disguised as a greedy picking problem, but 'longest contiguous subarray with at most k distinct' is the classic variable window; the mistake is resetting the window entirely at a third type instead of shrinking incrementally.",
+  "variants": ["General k version: Longest Substring with At Most K Distinct Characters 340", "If exactly k distinct subarrays must be counted, Subarrays with K Different Integers 992 (at-most(k) minus at-most(k-1))", "If only one basket type can be changed at most k times, Longest Repeating Character Replacement 424"]
+ },
+ {
+  "id": "0907-sum-of-subarray-minimums",
+  "signals": ["sum of min over every subarray", "contribution of each element", "previous smaller and next smaller", "modulo 1e9+7", "count subarrays where element is the minimum"],
+  "constraints": "n up to 3e4 makes O(n^2) around 1e9 operations, too slow; the monotonic stack finds each element's left and right boundaries in O(n), and the answer needs modular arithmetic.",
+  "confusable": "Beginners try DP over subarrays or a sliding-window minimum, but there is no fixed window; think in terms of how many subarrays each element is the minimum of, using tie-breaking (strict on one side, non-strict on the other) to avoid double counting equal values.",
+  "variants": ["If you need the sum of (max - min) over all subarrays, Sum of Subarray Ranges 2104 runs the same contribution trick twice", "If you need the largest rectangle under a histogram, Largest Rectangle in Histogram 84 uses the same boundaries", "If you want the maximum of min(subarray) * sum(subarray), Maximum Score of a Good Subarray 1793 expands from the boundaries"]
+ },
+ {
+  "id": "0921-minimum-add-to-make-parentheses-valid",
+  "signals": ["parentheses string", "minimum insertions to make valid", "single bracket type", "unmatched opens and unmatched closes", "balance counter"],
+  "constraints": "n up to 1000 so O(n) with a counter is intended; the stack is unnecessary because there is only one bracket type, so a running balance suffices.",
+  "confusable": "Reaching for a full stack works but obscures the insight; also counting only the final imbalance is wrong because a ')' that dips the balance below zero must be fixed immediately and cannot be cancelled by later '('.",
+  "variants": ["If you need the minimum removals rather than insertions, the same counting gives the answer, or Minimum Remove to Make Valid Parentheses 1249 to output the string", "If a close needs two characters '))', Minimum Insertions to Balance a Parentheses String 1541 tracks parity", "If there are multiple bracket types, a stack is required: Valid Parentheses 20"]
+ },
+ {
+  "id": "0930-binary-subarrays-with-sum",
+  "signals": ["number of subarrays with sum equal to goal", "binary array", "count pairs of prefix sums with a given difference", "count subarrays with sum at most k then subtract", "exact sum counting"],
+  "constraints": "n up to 3e4 makes O(n^2) around 4.5e8 and risky; prefix sums with a hash map (or an array since sums are bounded by n) is O(n), and because values are non-negative, atMost(goal) minus atMost(goal-1) with sliding windows also works in O(1) space.",
+  "confusable": "It looks like a sliding window, but 'exactly goal' is not directly monotone in the window size when there are zeros; you either count prefix pairs or use the at-most difference trick.",
+  "variants": ["With arbitrary integers (negatives), Subarray Sum Equals K 560 with prefix sums and a hash map", "If you count subarrays with exactly k odd numbers, Count Number of Nice Subarrays 1248 is the same with odd=1", "If you need the longest subarray with equal 0s and 1s, Contiguous Array 525 maps 0 to -1 and stores first-seen prefix"]
+ },
+ {
+  "id": "0932-beautiful-array",
+  "signals": ["construct a permutation with a forbidden arithmetic triple", "return any valid answer", "property preserved under affine maps", "split into odds and evens", "build recursively from a smaller instance"],
+  "constraints": "n up to 1000 allows any O(n log n) or O(n^2) construction; the divide and conquer doubles the array size each level, so about 10 levels of O(n) work.",
+  "confusable": "Backtracking over permutations is hopeless; the key is a structural argument (odd + even is never even) so the search space is not searched at all but constructed.",
+  "variants": ["If you must arrange numbers so no two adjacent sum to a perfect square, Number of Squareful Arrays 996 needs backtracking with counts", "If a permutation with a target number of distinct adjacent differences is needed, Beautiful Arrangement II 667 alternates high and low", "If the invariant is preserved under a map, look for a self-similar construction (like Gray code generation)"]
+ },
+ {
+  "id": "0938-range-sum-of-bst",
+  "signals": ["binary search tree", "sum of values in an inclusive range [low, high]", "prune subtrees using BST ordering", "range query on a tree", "skip left when node < low, skip right when node > high"],
+  "constraints": "Up to 2e4 nodes, so a full traversal is O(n) and passes, but the BST invariant lets you skip whole subtrees, which is the intended optimization; values and bounds up to 1e5 keep sums in 32-bit range.",
+  "confusable": "Treating it as a generic tree and summing everything is correct but ignores the BST hint; the trap in pruning is skipping the wrong side (if node.val < low, the left subtree is entirely too small).",
+  "variants": ["If you must delete all nodes outside the range, Trim a Binary Search Tree 669 uses the same pruning recursion", "If the tree is not a BST, plain DFS summing all nodes in range", "If you need the count of values in a range with many queries, an in-order array plus binary search or a Fenwick tree"]
+ },
+ {
+  "id": "0940-distinct-subsequences-ii",
+  "signals": ["number of distinct subsequences", "modulo 1e9+7", "duplicates must not be double counted", "last occurrence of each character", "each new character doubles the count"],
+  "constraints": "n up to 2000 with 26 letters, so the O(n) or O(26n) DP is intended; enumerating subsequences is exponential and even an O(n^2) DP with dedup would be fine but unnecessary.",
+  "confusable": "Counting all subsequences as 2^n - 1 ignores duplicates; the correction is to subtract the count contributed by the previous occurrence of the same character, which is where the 'last seen' map comes in.",
+  "variants": ["If you count how many times t appears as a subsequence of s, Distinct Subsequences 115 (2D DP)", "If you need the number of distinct palindromic subsequences, Count Different Palindromic Subsequences 730 uses interval DP with the same dedup idea", "If you need the number of distinct substrings, that is a suffix automaton or suffix array problem"]
+ },
+ {
+  "id": "0945-minimum-increment-to-make-array-unique",
+  "signals": ["make every value unique", "only increments allowed", "minimum number of moves", "duplicates cascade upward", "sort then push each value above the previous"],
+  "constraints": "n up to 1e5 and values up to 1e5 allow a counting array of size about 2e5 for an O(n + V) sweep, or sort in O(n log n) and walk with a running 'next free value'; O(n^2) repeated collision fixing is too slow.",
+  "confusable": "Incrementing a duplicate by one and rechecking naively can loop many times per element; sorting (or counting) lets you assign each element max(value, prev + 1) in one pass.",
+  "variants": ["If decrements were also allowed, you would match sorted values to a sorted target arrangement centered on the original values", "If the values represent heights and you must make each at most one less than the previous, Reduction Operations or sort-and-cap logic applies", "If you are assigning seats and must count moves to fill a target set of positions, Minimum Number of Moves to Seat Everyone 2037 sorts both sides"]
+ }
+]

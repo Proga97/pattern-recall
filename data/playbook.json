@@ -1,0 +1,794 @@
+[
+  {
+    "name": "Two Pointers",
+    "one_liner": "Move two indices over a sorted or symmetric structure so each step provably discards one candidate, turning an O(n^2) scan into O(n).",
+    "use_when": [
+      "Array is sorted (or you may sort it) and you need a pair/triple meeting a sum or difference condition",
+      "You need to compare or converge from both ends: palindrome check, container/area, reversing in place",
+      "You must partition or compact in place with O(1) extra space (move zeros, remove duplicates, Dutch flag)",
+      "Two sequences must be walked in lockstep by value: merging, intersection, subsequence check",
+      "Statement says 'without extra space' or 'in place' on a linear structure"
+    ],
+    "avoid_when": "The array is unsorted and order matters for the answer's indices, or the condition is not monotonic in the pointer movement, in which case a hash map (index lookup) is correct and two pointers silently misses answers.",
+    "template": "def two_pointers(arr, target):\n    arr.sort()                      # skip if already sorted / order-sensitive\n    lo, hi = 0, len(arr) - 1\n    res = []\n    while lo < hi:\n        cur = arr[lo] + arr[hi]     # KNOB: the comparison quantity\n        if cur == target:\n            res.append((arr[lo], arr[hi]))\n            lo += 1\n            hi -= 1\n            while lo < hi and arr[lo] == arr[lo - 1]:   # dedup\n                lo += 1\n        elif cur < target:\n            lo += 1                 # need bigger -> only lo can help\n        else:\n            hi -= 1                 # need smaller -> only hi can help\n    return res",
+    "knobs": [
+      "Opposite-ends vs same-direction (fast/slow write pointer) traversal",
+      "The comparison quantity and which side to move when it is too small/large",
+      "Whether duplicates must be skipped and on which pointer",
+      "Loop guard lo < hi (pairs, no self-use) vs lo <= hi (single-element center matters)"
+    ],
+    "complexity": "O(n) after an O(n log n) sort; O(1) extra space beyond the output.",
+    "pitfalls": [
+      "Forgetting dedup, so the same pair is emitted many times in 3Sum-style problems",
+      "Sorting when the problem asks for original indices",
+      "Advancing only one pointer after a hit, causing an infinite loop or a missed pair",
+      "Using lo < hi when the middle element is a valid standalone answer"
+    ],
+    "canonical": [
+      "167. Two Sum II - Input Array Is Sorted",
+      "15. 3Sum",
+      "11. Container With Most Water",
+      "42. Trapping Rain Water",
+      "75. Sort Colors"
+    ]
+  },
+  {
+    "name": "Sliding Window",
+    "one_liner": "Maintain a contiguous range plus an incrementally updated summary, expanding the right edge always and shrinking the left edge exactly while the window is invalid (or oversized).",
+    "use_when": [
+      "The answer is a contiguous subarray or substring and you want longest/shortest/count",
+      "A constraint is monotone in window size: 'at most k distinct', 'no repeating chars', 'sum >= target'",
+      "Fixed-length window: 'every window of size k', averages, anagram matching",
+      "Statement counts subarrays satisfying a property that is closed under shrinking",
+      "Brute force is 'try every subarray' and the check is incrementally maintainable"
+    ],
+    "avoid_when": "The property is not monotone under growth (e.g. subarrays with sum exactly k over an array with negatives) - use prefix sums with a hash map instead, since shrinking cannot restore validity.",
+    "template": "from collections import Counter\n\ndef sliding_window(s, k):\n    count = Counter()\n    left = 0\n    best = 0\n    for right, ch in enumerate(s):\n        count[ch] += 1                       # add right element\n        while len(count) > k:                # KNOB: the invalid/shrink condition\n            count[s[left]] -= 1\n            if count[s[left]] == 0:\n                del count[s[left]]\n            left += 1\n        # window [left, right] is now valid\n        best = max(best, right - left + 1)   # KNOB: longest vs shortest vs count\n    return best",
+    "knobs": [
+      "The shrink condition: while invalid (longest) vs while valid (shortest, record before shrinking)",
+      "The window state: Counter, running sum, distinct count, or a deque",
+      "Fixed size k (shrink with an if, not a while) vs variable size",
+      "For counting subarrays: add (right - left + 1) per step instead of tracking a max"
+    ],
+    "complexity": "O(n) time, each index enters and leaves the window once; O(k) or O(alphabet) space.",
+    "pitfalls": [
+      "Recording the answer at the wrong moment (before shrinking for longest, after for shortest)",
+      "Leaving zero-count keys in the Counter so len(count) overstates distinctness",
+      "Using if instead of while for a variable-size window",
+      "Trying to slide over an array with negative numbers and a sum constraint"
+    ],
+    "canonical": [
+      "3. Longest Substring Without Repeating Characters",
+      "76. Minimum Window Substring",
+      "209. Minimum Size Subarray Sum",
+      "424. Longest Repeating Character Replacement",
+      "438. Find All Anagrams in a String"
+    ]
+  },
+  {
+    "name": "Hash Map",
+    "one_liner": "Trade memory for time by storing a computed key (complement, canonical form, seen-index, frequency) so a future lookup is O(1) instead of a rescan.",
+    "use_when": [
+      "You need 'have I seen this before' or 'where did I see it' in one pass",
+      "Grouping by a canonical signature: sorted letters, character counts, normalized shape",
+      "Counting frequencies, then answering top-k / majority / first-unique questions",
+      "A nested loop searches for a complement or partner value",
+      "You need O(1) membership on an unsorted collection with no ordering requirement"
+    ],
+    "avoid_when": "Keys are a small dense integer range or the values are a permutation of 0..n-1, where an array or index-as-hash (cyclic sort, negation marking) is faster and O(1) space.",
+    "template": "from collections import defaultdict\n\ndef hash_map_scan(nums, target):\n    seen = {}                       # KNOB: key = what makes a match unique\n    groups = defaultdict(list)\n    for i, x in enumerate(nums):\n        need = target - x           # KNOB: the derived lookup key\n        if need in seen:\n            return [seen[need], i]\n        seen[x] = i                 # store AFTER the lookup to avoid self-pairing\n        groups[x % 10].append(i)    # KNOB: the grouping signature\n    return []",
+    "knobs": [
+      "What the key is: raw value, complement, canonical signature, or running prefix state",
+      "What the value is: index, count, list of members, or first-occurrence position",
+      "Insert before or after the lookup (controls whether an element may match itself)",
+      "dict vs defaultdict vs Counter vs set (do you need the payload at all)"
+    ],
+    "complexity": "O(n) time average, O(n) space; worst case O(n) per op only with adversarial hashing.",
+    "pitfalls": [
+      "Inserting before looking up, so an element pairs with itself",
+      "Using a mutable list as a key instead of a tuple",
+      "Overwriting a first-occurrence index when the problem wants the earliest",
+      "Iterating a dict and mutating it in the same loop"
+    ],
+    "canonical": [
+      "1. Two Sum",
+      "49. Group Anagrams",
+      "128. Longest Consecutive Sequence",
+      "560. Subarray Sum Equals K",
+      "347. Top K Frequent Elements"
+    ]
+  },
+  {
+    "name": "Prefix Sum",
+    "one_liner": "Precompute cumulative aggregates so any range query becomes a difference of two precomputed values in O(1).",
+    "use_when": [
+      "Many range-sum (or range-xor, range-count) queries over a static array",
+      "Counting subarrays whose sum equals k, especially with negative numbers",
+      "'Divisible by k', 'equal number of 0s and 1s', or any condition on prefix[j] - prefix[i]",
+      "2D submatrix sum queries over an immutable grid",
+      "A difference array is needed: many range updates, one final read"
+    ],
+    "avoid_when": "The array is mutated between queries - use a Fenwick/segment tree instead, since every update would force an O(n) prefix rebuild.",
+    "template": "from collections import defaultdict\n\ndef count_subarrays_with_sum(nums, k):\n    seen = defaultdict(int)\n    seen[0] = 1                 # empty prefix; the base case that fixes off-by-ones\n    running = 0\n    total = 0\n    for x in nums:\n        running += x            # KNOB: the aggregate (sum, xor, count of 1s minus 0s)\n        key = running - k       # KNOB: what an earlier prefix must equal\n        total += seen[key]\n        seen[running] += 1      # record AFTER querying\n    return total\n\ndef prefix_array(nums):\n    pre = [0] * (len(nums) + 1)\n    for i, x in enumerate(nums):\n        pre[i + 1] = pre[i] + x\n    return pre                  # sum(l..r) inclusive == pre[r + 1] - pre[l]",
+    "knobs": [
+      "The aggregate operator: sum, xor, or a +1/-1 encoding of a balance condition",
+      "Whether you need a hash map of prefix states (counting) or a plain prefix array (queries)",
+      "Storing counts vs earliest index (counting subarrays vs longest subarray)",
+      "1D vs 2D (inclusion-exclusion) vs difference array for range updates"
+    ],
+    "complexity": "O(n) build plus O(1) per query; O(n) space (O(rows*cols) in 2D).",
+    "pitfalls": [
+      "Omitting the seen[0] = 1 base case, missing subarrays starting at index 0",
+      "Off-by-one on inclusive vs exclusive endpoints in pre[r+1] - pre[l]",
+      "Recording the current prefix before querying, so a zero-length subarray counts",
+      "Storing counts when the problem asks for the longest subarray (needs earliest index)"
+    ],
+    "canonical": [
+      "560. Subarray Sum Equals K",
+      "303. Range Sum Query - Immutable",
+      "304. Range Sum Query 2D - Immutable",
+      "525. Contiguous Array",
+      "974. Subarray Sums Divisible by K"
+    ]
+  },
+  {
+    "name": "Binary Search",
+    "one_liner": "Halve a monotonic search space each step by asking one yes/no predicate that is false then true (or true then false) across the range.",
+    "use_when": [
+      "The input is sorted, rotated-sorted, or otherwise has a monotone predicate",
+      "You need the first/last index satisfying a condition, or an insertion point",
+      "'Minimize the maximum' or 'maximize the minimum' - binary search the answer value",
+      "Constraints are huge (1e9 or 1e18) so the answer must be found in log steps",
+      "A feasibility check is cheap (O(n)) but the answer space is large and monotone"
+    ],
+    "avoid_when": "The predicate is not monotone over the search space (e.g. an unsorted array with no rotation structure, or a cost function with multiple local minima) - a wrong mid decision then discards the answer irrecoverably.",
+    "template": "def lower_bound(arr, target):\n    # lo < hi form: search a HALF-OPEN space, converges on one index, no return -1\n    lo, hi = 0, len(arr)          # hi = len(arr): the 'not found' slot is valid\n    while lo < hi:\n        mid = (lo + hi) // 2\n        if arr[mid] < target:     # KNOB: predicate; True -> answer is strictly right\n            lo = mid + 1\n        else:\n            hi = mid              # mid may still be the answer, so keep it\n    return lo                     # first index with arr[i] >= target\n\ndef exact_find(arr, target):\n    # lo <= hi form: use ONLY when you want the exact value or -1\n    lo, hi = 0, len(arr) - 1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if arr[mid] == target:\n            return mid\n        if arr[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1\n\ndef binary_search_answer(lo, hi, feasible):\n    while lo < hi:                # smallest value that is feasible\n        mid = (lo + hi) // 2\n        if feasible(mid):\n            hi = mid\n        else:\n            lo = mid + 1\n    return lo",
+    "knobs": [
+      "lo < hi (converge to a boundary/insertion point, hi = n, never -1) vs lo <= hi (exact hit or -1)",
+      "The predicate direction: first True vs last False, and whether mid is kept (hi = mid) or discarded (hi = mid - 1)",
+      "Searching indices vs searching the answer value with a feasibility function",
+      "mid = (lo + hi) // 2 vs (lo + hi + 1) // 2 when lo = mid, to avoid a stuck loop"
+    ],
+    "complexity": "O(log n) over indices, or O(n log(range)) when each feasibility check is O(n).",
+    "pitfalls": [
+      "Mixing the two forms: hi = mid inside a lo <= hi loop loops forever",
+      "Using mid = (lo + hi) // 2 with the lo = mid branch (needs the +1 rounding)",
+      "Setting hi = len(arr) - 1 in a lower_bound, losing the 'insert at end' answer",
+      "Assuming a rotated array is fully sorted; you must first decide which half is sorted"
+    ],
+    "canonical": [
+      "704. Binary Search",
+      "34. Find First and Last Position of Element in Sorted Array",
+      "33. Search in Rotated Sorted Array",
+      "875. Koko Eating Bananas",
+      "410. Split Array Largest Sum"
+    ]
+  },
+  {
+    "name": "Stack",
+    "one_liner": "Use LIFO order to defer work until its matching partner or closing context arrives, mirroring the nesting structure of the input.",
+    "use_when": [
+      "Input has nested or paired structure: brackets, tags, quotes, nested encodings",
+      "You must undo, cancel, or collapse adjacent items (asteroid collisions, string reductions)",
+      "Evaluating expressions: RPN, infix with precedence, basic calculators",
+      "Converting a recursive traversal to an iterative one, or simulating a call stack",
+      "'Process the most recent unresolved item first' describes the logic"
+    ],
+    "avoid_when": "Order of resolution is first-in-first-out (level-by-level processing, shortest path) - that is a queue, and a stack gives depth-first behavior that produces wrong distances.",
+    "template": "def stack_scan(tokens):\n    stack = []\n    pairs = {')': '(', ']': '[', '}': '{'}\n    for t in tokens:\n        if t in pairs:                      # KNOB: what counts as a 'closer'\n            if not stack or stack[-1] != pairs[t]:\n                return False                # unmatched closer\n            stack.pop()                     # resolve with the most recent opener\n        else:\n            stack.append(t)                 # KNOB: what you push (token, index, or state tuple)\n    return not stack                        # leftovers mean unclosed openers",
+    "knobs": [
+      "What to push: the raw token, its index, or a tuple of saved state (string, multiplier)",
+      "What triggers a pop: a matching closer, a comparison with the top, or an explicit delimiter",
+      "Whether an empty stack at pop time is an error or a valid no-op",
+      "Whether the final answer is the stack contents or a value accumulated during pops"
+    ],
+    "complexity": "O(n) time, each element pushed and popped once; O(n) space worst case.",
+    "pitfalls": [
+      "Peeking stack[-1] without first checking the stack is non-empty",
+      "Forgetting the final emptiness check, accepting '(((' as valid",
+      "Pushing values when you later need indices (for distances or widths)",
+      "Losing the outer context in nested decoding by not saving it on push"
+    ],
+    "canonical": [
+      "20. Valid Parentheses",
+      "150. Evaluate Reverse Polish Notation",
+      "394. Decode String",
+      "155. Min Stack",
+      "227. Basic Calculator II"
+    ]
+  },
+  {
+    "name": "Monotonic Stack",
+    "one_liner": "Keep a stack whose values stay sorted by popping anything the incoming element dominates, so each pop answers 'next greater/smaller' for the popped index in O(1).",
+    "use_when": [
+      "You need the next/previous greater or smaller element for every index",
+      "The answer is a span, width, or distance until a condition first holds (days until warmer)",
+      "Largest rectangle / maximal area under a histogram or in a binary matrix",
+      "'Remove k digits to make the smallest number' or lexicographically smallest subsequence",
+      "A brute force is 'for each i, scan right until something bigger' and n is large"
+    ],
+    "avoid_when": "The query is about the maximum over a sliding range rather than the first element that beats you - that is a monotonic deque, since a stack cannot evict from the front as the window's left edge moves.",
+    "template": "def next_greater(nums):\n    n = len(nums)\n    res = [-1] * n\n    stack = []                              # holds INDICES, values strictly decreasing\n    for i, x in enumerate(nums):\n        while stack and nums[stack[-1]] < x:  # KNOB: < vs <= (ties), < vs > (direction)\n            j = stack.pop()\n            res[j] = x                        # x is j's next greater element\n        stack.append(i)\n    return res                                # unresolved indices keep -1\n\ndef largest_rectangle(heights):\n    stack, best = [], 0\n    for i, h in enumerate(heights + [0]):     # sentinel flushes the stack\n        while stack and heights[stack[-1]] >= h:\n            height = heights[stack.pop()]\n            left = stack[-1] + 1 if stack else 0\n            best = max(best, height * (i - left))\n        stack.append(i)\n    return best",
+    "knobs": [
+      "Increasing vs decreasing stack (next smaller vs next greater)",
+      "Store indices (needed for widths and distances) vs bare values",
+      "Strict < vs non-strict <= in the pop test, which decides tie handling",
+      "Whether to append a sentinel (0 or infinity) to force a final flush"
+    ],
+    "complexity": "O(n) time, each index pushed and popped at most once; O(n) space.",
+    "pitfalls": [
+      "Storing values when the width computation needs indices",
+      "Forgetting the sentinel, leaving the last bars unprocessed",
+      "Computing the left boundary as stack[-1] after the pop without the empty-stack case",
+      "Getting ties wrong so equal heights double-count or under-count area"
+    ],
+    "canonical": [
+      "739. Daily Temperatures",
+      "496. Next Greater Element I",
+      "84. Largest Rectangle in Histogram",
+      "42. Trapping Rain Water",
+      "402. Remove K Digits"
+    ]
+  },
+  {
+    "name": "Queue / Deque",
+    "one_liner": "Process items in arrival order with O(1) push/pop at both ends, either for level-order expansion or for maintaining a window extremum.",
+    "use_when": [
+      "Level-by-level or shortest-number-of-steps expansion (the BFS frontier)",
+      "Sliding window maximum/minimum in O(n) with a monotonic deque",
+      "You need efficient appends and pops at both ends (0-1 BFS, palindrome check, rotation)",
+      "Simulating a rotating turn order, a task scheduler, or a rate-limited event log",
+      "Designing a fixed-capacity buffer or a moving average"
+    ],
+    "avoid_when": "You only push and pop at one end and need most-recent-first semantics - a list used as a stack is simpler, and deque's front operations buy nothing.",
+    "template": "from collections import deque\n\ndef sliding_window_max(nums, k):\n    dq = deque()                   # indices, values strictly decreasing\n    res = []\n    for i, x in enumerate(nums):\n        while dq and dq[0] <= i - k:        # evict indices left of the window\n            dq.popleft()\n        while dq and nums[dq[-1]] <= x:     # KNOB: <= for max, >= for min\n            dq.pop()                        # x dominates them forever\n        dq.append(i)\n        if i >= k - 1:\n            res.append(nums[dq[0]])         # front is the window extremum\n    return res",
+    "knobs": [
+      "Plain FIFO queue (BFS frontier) vs monotonic deque (window extremum)",
+      "Decreasing (max) vs increasing (min) order in the pop-back test",
+      "Store indices (needed to expire by window position) vs values",
+      "Eviction rule: by index range, by timestamp, or by fixed capacity"
+    ],
+    "complexity": "O(n) amortized for a monotonic deque; O(1) per push/pop; O(k) space.",
+    "pitfalls": [
+      "Using list.pop(0), which is O(n) and turns the solution quadratic",
+      "Evicting stale indices after instead of before reading the front",
+      "Emitting a result before the window is full (i >= k - 1 guard)",
+      "Mutating a deque while iterating over it"
+    ],
+    "canonical": [
+      "239. Sliding Window Maximum",
+      "622. Design Circular Queue",
+      "346. Moving Average from Data Stream",
+      "933. Number of Recent Calls",
+      "641. Design Circular Deque"
+    ]
+  },
+  {
+    "name": "Linked List",
+    "one_liner": "Rewire next pointers with a small set of local variables, using a dummy head so insertions and deletions at the front need no special case.",
+    "use_when": [
+      "The input is a ListNode chain and the answer requires reordering, merging, or splicing",
+      "You must delete or insert nodes in O(1) given a predecessor",
+      "Reversal of the whole list or of a sublist / of groups of k",
+      "'Do it in one pass' or 'O(1) extra space' on a list you cannot index",
+      "Partitioning a list around a value while keeping relative order"
+    ],
+    "avoid_when": "The problem needs random access or repeated index arithmetic - copy to an array first, since every list index costs O(n) and pointer gymnastics buys nothing.",
+    "template": "class ListNode:\n    def __init__(self, val=0, next=None):\n        self.val = val\n        self.next = next\n\ndef reverse(head):\n    prev, cur = None, head\n    while cur:\n        nxt = cur.next        # save BEFORE overwriting\n        cur.next = prev\n        prev, cur = cur, nxt\n    return prev               # new head\n\ndef build_with_dummy(head):\n    dummy = ListNode(0, head) # KNOB: dummy removes the head special case\n    tail = dummy\n    cur = head\n    while cur:\n        if True:              # KNOB: the keep/skip/splice condition\n            tail.next = cur\n            tail = tail.next\n        cur = cur.next\n    tail.next = None          # terminate, or you may keep a cycle\n    return dummy.next",
+    "knobs": [
+      "Use a dummy head (any chance the head itself changes) vs operate in place",
+      "Whether you need the predecessor node, and how many pointers to carry",
+      "Where to cut and re-terminate the list to avoid accidental cycles",
+      "Iterative rewiring vs recursion (recursion costs O(n) stack)"
+    ],
+    "complexity": "O(n) time, O(1) space for iterative rewiring; O(n) stack if recursive.",
+    "pitfalls": [
+      "Overwriting cur.next before saving the successor, losing the rest of the list",
+      "Leaving a cycle by not setting the final tail.next = None",
+      "Missing the case where the head itself is removed (solved by a dummy)",
+      "Returning dummy instead of dummy.next"
+    ],
+    "canonical": [
+      "206. Reverse Linked List",
+      "21. Merge Two Sorted Lists",
+      "19. Remove Nth Node From End of List",
+      "25. Reverse Nodes in k-Group",
+      "138. Copy List with Random Pointer"
+    ]
+  },
+  {
+    "name": "Fast & Slow Pointers",
+    "one_liner": "Advance one pointer at twice the speed of another so they meet inside any cycle, or so the slow one lands on the middle when the fast one reaches the end.",
+    "use_when": [
+      "Detect whether a linked list or a functional-graph iteration has a cycle",
+      "Find the cycle's entry node or its length without extra space",
+      "Find the middle of a list in one pass (for reordering, palindrome check, merge sort)",
+      "A sequence is defined by repeated application of a function (happy number, next(x) = nums[x])",
+      "'O(1) space' is demanded on a problem that would otherwise want a hash set"
+    ],
+    "avoid_when": "You need the actual set of visited nodes or their order (e.g. reporting the cycle members) - a hash map of node to index is clearer and the O(n) space is usually allowed.",
+    "template": "def detect_cycle_start(head):\n    slow = fast = head\n    while fast and fast.next:          # KNOB: guard both for a 2-step hop\n        slow = slow.next\n        fast = fast.next.next\n        if slow is fast:               # meeting point inside the cycle\n            break\n    else:\n        return None                    # loop ended normally -> no cycle\n    slow = head                        # Floyd phase 2: reset one to the head\n    while slow is not fast:\n        slow = slow.next\n        fast = fast.next               # both move ONE step now\n    return slow                        # cycle entry\n\ndef middle(head):\n    slow = fast = head\n    while fast and fast.next:\n        slow, fast = slow.next, fast.next.next\n    return slow                        # second middle when the length is even",
+    "knobs": [
+      "Start both at head (middle-biased-right) vs fast one step ahead (middle-biased-left)",
+      "Loop guard: while fast and fast.next (2 steps) vs fast.next.next for other offsets",
+      "Whether you need only cycle existence, its entry node, or its length",
+      "Identity comparison (is) on nodes vs value comparison on numbers"
+    ],
+    "complexity": "O(n) time, O(1) space.",
+    "pitfalls": [
+      "Checking slow is fast before the first move, so they trivially match at the start",
+      "Forgetting the fast.next guard and hitting an AttributeError on None",
+      "Returning the meeting point as the cycle entry without Floyd's second phase",
+      "Assuming slow lands on the first middle for an even-length list"
+    ],
+    "canonical": [
+      "141. Linked List Cycle",
+      "142. Linked List Cycle II",
+      "876. Middle of the Linked List",
+      "202. Happy Number",
+      "287. Find the Duplicate Number"
+    ]
+  },
+  {
+    "name": "Recursion",
+    "one_liner": "Define the answer for a problem in terms of the same function on strictly smaller inputs, plus a base case that stops the descent.",
+    "use_when": [
+      "The structure is self-similar: trees, nested lists, expressions, fractals, divide points",
+      "The problem statement is naturally 'solve the rest and combine'",
+      "You need to explore a decision tree where each level is one choice",
+      "An iterative version would need an explicit stack of state anyway",
+      "Recurrences are given directly (f(n) = f(n-1) + f(n-2), or split at every index)"
+    ],
+    "avoid_when": "Depth can reach the input size on adversarial input (a 1e5-long skewed list or path) - Python's ~1000-frame limit makes an explicit stack or an iterative loop the safe choice.",
+    "template": "from functools import lru_cache\n\ndef solve(args):\n    def rec(state):\n        if is_base(state):              # KNOB: base case(s) - handle empty/None FIRST\n            return base_value(state)\n        result = identity               # KNOB: how sub-answers combine\n        for sub in subproblems(state):  # strictly smaller than state\n            result = combine(result, rec(sub))\n        return result\n    return rec(initial(args))\n\n@lru_cache(maxsize=None)\ndef rec_memo(i, j):                     # memoize when subproblems repeat\n    if i >= j:\n        return 0\n    return 1 + min(rec_memo(i + 1, j), rec_memo(i, j - 1))",
+    "knobs": [
+      "What the state is (the fewest parameters that determine the answer)",
+      "Return the answer up vs pass an accumulator down",
+      "Whether subproblems overlap (add memoization) or not (plain recursion)",
+      "Base case placement: check None/empty before touching attributes"
+    ],
+    "complexity": "Depends on the recurrence; branching b with depth d gives O(b^d) unless memoized.",
+    "pitfalls": [
+      "A base case that never triggers because the state does not shrink on every path",
+      "Recursing on the same size (off-by-one in the sub-call) causing infinite recursion",
+      "Mutating a shared list across branches without restoring it",
+      "Hitting RecursionError; raise the limit only as a last resort, prefer iteration"
+    ],
+    "canonical": [
+      "509. Fibonacci Number",
+      "104. Maximum Depth of Binary Tree",
+      "50. Pow(x, n)",
+      "779. K-th Symbol in Grammar",
+      "394. Decode String"
+    ]
+  },
+  {
+    "name": "Backtracking",
+    "one_liner": "Build a candidate incrementally with choose / explore / unchoose, pruning any branch that can no longer lead to a valid or better answer.",
+    "use_when": [
+      "The problem asks for ALL solutions: permutations, combinations, subsets, partitions",
+      "Constraint satisfaction with placement rules: N-Queens, Sudoku, word search on a grid",
+      "The search space is exponential but heavy pruning is available",
+      "n is small (roughly n <= 20 for subsets, n <= 10 for permutations)",
+      "'Return every way to ...' or 'count the arrangements that satisfy ...'"
+    ],
+    "avoid_when": "Only the count or the optimum is needed and subproblems overlap on a compact state - DP or memoization collapses the exponential tree that backtracking would re-walk.",
+    "template": "def backtrack_all(nums, target):\n    nums.sort()                       # enables dedup and early pruning\n    res, path = [], []\n\n    def bt(start, remaining):\n        if remaining == 0:            # KNOB: the accept condition\n            res.append(path[:])       # COPY the path, not the reference\n            return\n        for i in range(start, len(nums)):\n            if nums[i] > remaining:   # KNOB: prune (sorted -> rest is worse too)\n                break\n            if i > start and nums[i] == nums[i - 1]:\n                continue              # skip duplicate choices at this level\n            path.append(nums[i])                  # choose\n            bt(i + 1, remaining - nums[i])        # explore (i+1 = no reuse, i = reuse)\n            path.pop()                            # unchoose\n    bt(0, target)\n    return res",
+    "knobs": [
+      "Next index: i + 1 (each element once) vs i (reuse allowed) vs 0 with a used[] array (permutations)",
+      "The prune test and whether sorting makes it a break instead of a continue",
+      "Duplicate handling: sort plus skip equal siblings at the same depth",
+      "Accept condition and whether partial paths are also answers (subsets record at every node)"
+    ],
+    "complexity": "O(b^d) nodes times O(d) to copy each solution; O(d) recursion space.",
+    "pitfalls": [
+      "Appending path instead of path[:], so all results alias one mutating list",
+      "Forgetting to unchoose, leaking state into sibling branches",
+      "Skipping duplicates with i > 0 instead of i > start, which drops valid results",
+      "Marking a grid cell visited but not restoring it after the recursive call"
+    ],
+    "canonical": [
+      "78. Subsets",
+      "46. Permutations",
+      "39. Combination Sum",
+      "51. N-Queens",
+      "79. Word Search"
+    ]
+  },
+  {
+    "name": "DFS",
+    "one_liner": "Explore one branch to exhaustion before backtracking, using a visited set on graphs so each node is expanded once.",
+    "use_when": [
+      "You need connectivity, reachability, or connected components (islands, provinces)",
+      "The question is about paths, cycles, or accumulating state along a root-to-node path",
+      "Flood fill / region marking on a grid",
+      "The graph is a tree or a DAG and you need post-order information (subtree sums, ordering)",
+      "Recursion depth is bounded by roughly the node count and that count is modest"
+    ],
+    "avoid_when": "You need the shortest path in an unweighted graph - DFS finds a path but not the shortest, and BFS is the correct tool.",
+    "template": "def dfs_graph(graph, start):\n    visited = set()\n\n    def dfs(u):\n        visited.add(u)            # mark on ENTRY to avoid revisits/cycles\n        for v in graph[u]:        # KNOB: neighbor generation (adj list, grid deltas)\n            if v not in visited:\n                dfs(v)\n    dfs(start)\n    return visited\n\ndef dfs_grid_iter(grid, sr, sc):\n    R, C = len(grid), len(grid[0])\n    stack = [(sr, sc)]\n    seen = {(sr, sc)}\n    count = 0\n    while stack:\n        r, c = stack.pop()\n        count += 1\n        for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n            nr, nc = r + dr, c + dc\n            if 0 <= nr < R and 0 <= nc < C and (nr, nc) not in seen \\\n               and grid[nr][nc] == 1:      # KNOB: the passable test\n                seen.add((nr, nc))\n                stack.append((nr, nc))\n    return count",
+    "knobs": [
+      "Recursive vs explicit stack (depth limits, and iterative loses natural post-order)",
+      "Mark visited on push/entry (prevents duplicates) vs on pop (allows duplicates in the stack)",
+      "Whether visited is permanent (components) or path-scoped and undone (backtracking, cycle detection)",
+      "Pre-order work (on entry) vs post-order work (after the children return)"
+    ],
+    "complexity": "O(V + E) time, O(V) space for visited plus O(V) recursion depth.",
+    "pitfalls": [
+      "Marking visited after the recursive call, so cycles cause infinite recursion",
+      "Grid bounds checked after indexing instead of before",
+      "Stack overflow on a 1e5-node path; switch to the iterative form",
+      "Reusing one visited set across independent starts when each start needs a fresh one"
+    ],
+    "canonical": [
+      "200. Number of Islands",
+      "133. Clone Graph",
+      "695. Max Area of Island",
+      "417. Pacific Atlantic Water Flow",
+      "547. Number of Provinces"
+    ]
+  },
+  {
+    "name": "BFS",
+    "one_liner": "Expand the frontier level by level from a queue, so the first time a node is reached is by the fewest edges.",
+    "use_when": [
+      "Shortest path or minimum number of steps in an unweighted graph or grid",
+      "Level-order processing of a tree, or 'the answer is a number of rounds/minutes'",
+      "Multi-source spread: rotting oranges, distance to the nearest 0, fire spreading",
+      "State-space search where each move costs 1 (word ladder, lock combinations, jumps)",
+      "You need the minimum, and DFS would explore an exponential number of longer paths first"
+    ],
+    "avoid_when": "Edge weights differ - plain BFS is wrong; use Dijkstra (heap) for positive weights or 0-1 BFS with a deque when weights are only 0 and 1.",
+    "template": "from collections import deque\n\ndef bfs(graph, sources):\n    q = deque(sources)               # KNOB: single source vs multi-source seeding\n    dist = {s: 0 for s in sources}   # visited AND distance in one structure\n    while q:\n        for _ in range(len(q)):      # KNOB: this inner loop isolates one LEVEL\n            u = q.popleft()\n            for v in graph[u]:       # KNOB: neighbor generation\n                if v not in dist:    # mark when ENQUEUED, never when dequeued\n                    dist[v] = dist[u] + 1\n                    q.append(v)\n    return dist",
+    "knobs": [
+      "Single-source vs multi-source (seed the queue with every source at distance 0)",
+      "Level-batched loop (need the level index/count) vs flat loop with a dist map",
+      "What a 'node' is: a cell, a string state, or a tuple of (position, remaining keys)",
+      "Whether to stop early at the target or compute all distances"
+    ],
+    "complexity": "O(V + E) time, O(V) space for the queue and the visited/distance map.",
+    "pitfalls": [
+      "Marking visited on dequeue, letting a node enter the queue many times (blows up to O(V^2))",
+      "Using list.pop(0) instead of deque.popleft()",
+      "Capturing len(q) inside the loop after appends, breaking level boundaries",
+      "Forgetting to seed all sources for a multi-source spread"
+    ],
+    "canonical": [
+      "102. Binary Tree Level Order Traversal",
+      "994. Rotting Oranges",
+      "127. Word Ladder",
+      "542. 01 Matrix",
+      "752. Open the Lock"
+    ]
+  },
+  {
+    "name": "Tree Traversal",
+    "one_liner": "Visit every node in a chosen order (pre/in/post/level) and either return an aggregate up from the children or push context down from the parent.",
+    "use_when": [
+      "Any binary-tree question about depth, sums, diameters, paths, or serialization",
+      "You need children's answers before the parent's (post-order: subtree size, height, balance)",
+      "You need parent context in the child (pre-order: path so far, valid range, running prefix)",
+      "Reconstructing a tree from traversal orders, or comparing two trees structurally",
+      "Level-order output or right-side view (BFS on a tree)"
+    ],
+    "avoid_when": "The tree is a BST and the question is a targeted search or an ordered k-th query - exploit the ordering to prune to one branch instead of walking every node.",
+    "template": "def post_order_aggregate(root):\n    best = [0]\n\n    def height(node):\n        if not node:                       # base case FIRST\n            return 0\n        L = height(node.left)              # children answers before parent work\n        R = height(node.right)\n        best[0] = max(best[0], L + R)      # KNOB: the combine/record step\n        return 1 + max(L, R)               # KNOB: what you return upward\n    height(root)\n    return best[0]\n\ndef inorder_iterative(root):\n    out, stack, cur = [], [], root\n    while cur or stack:\n        while cur:                         # go as far left as possible\n            stack.append(cur)\n            cur = cur.left\n        cur = stack.pop()\n        out.append(cur.val)                # visit between left and right\n        cur = cur.right\n    return out",
+    "knobs": [
+      "Traversal order: pre (top-down context), in (sorted for a BST), post (bottom-up aggregate), level (BFS)",
+      "Return value up vs mutable accumulator (nonlocal / one-element list) for a global answer",
+      "What the recursive function returns versus what the problem's answer is (often different)",
+      "Recursive vs iterative with an explicit stack, and Morris traversal for O(1) space"
+    ],
+    "complexity": "O(n) time; O(h) space, h = height (O(n) for a skewed tree, O(log n) balanced).",
+    "pitfalls": [
+      "Confusing the returned value (height) with the tracked answer (diameter)",
+      "Missing the None base case and hitting AttributeError on a leaf's child",
+      "Assigning to an outer variable without nonlocal (rebinding a local instead)",
+      "Level-order that forgets None children, misaligning the right-side view"
+    ],
+    "canonical": [
+      "104. Maximum Depth of Binary Tree",
+      "543. Diameter of Binary Tree",
+      "94. Binary Tree Inorder Traversal",
+      "124. Binary Tree Maximum Path Sum",
+      "236. Lowest Common Ancestor of a Binary Tree"
+    ]
+  },
+  {
+    "name": "Binary Search Tree",
+    "one_liner": "Use the invariant left < node < right to discard a whole subtree at each step, and remember that an in-order walk of a BST is sorted.",
+    "use_when": [
+      "The problem says 'binary search tree' and asks for search, insert, delete, or a range query",
+      "You need the k-th smallest/largest, or a sorted output, from a tree",
+      "Validating BST-ness or finding the two swapped nodes",
+      "Lowest common ancestor where you can compare values instead of searching both subtrees",
+      "Building a balanced BST from a sorted array"
+    ],
+    "avoid_when": "The tree has no ordering guarantee (a plain binary tree) - value comparisons then prune away the correct answer and you must search both subtrees.",
+    "template": "def search(root, target):\n    node = root\n    while node:\n        if node.val == target:\n            return node\n        node = node.left if target < node.val else node.right   # discard half\n    return None\n\ndef validate(root):\n    def ok(node, low, high):        # KNOB: pass the allowed RANGE down, not just the parent\n        if not node:\n            return True\n        if not (low < node.val < high):\n            return False\n        return ok(node.left, low, node.val) and ok(node.right, node.val, high)\n    return ok(root, float('-inf'), float('inf'))\n\ndef kth_smallest(root, k):\n    stack, cur = [], root\n    while cur or stack:             # in-order yields sorted values\n        while cur:\n            stack.append(cur)\n            cur = cur.left\n        cur = stack.pop()\n        k -= 1\n        if k == 0:\n            return cur.val\n        cur = cur.right",
+    "knobs": [
+      "Iterative descent (O(1) space) vs recursive",
+      "For validation, pass a (low, high) range down vs track the previous in-order value",
+      "Strict vs non-strict comparison when duplicate values are permitted",
+      "Whether to stop early (k-th smallest) or complete the in-order walk"
+    ],
+    "complexity": "O(h) per search/insert/delete, h = O(log n) balanced but O(n) degenerate; O(n) for a full traversal.",
+    "pitfalls": [
+      "Validating only against the immediate parent instead of an inherited range",
+      "Using -inf/inf bounds when values may be at the integer extremes (compare against None instead)",
+      "Deleting a two-child node without replacing it with its in-order successor",
+      "Assuming O(log n) on a tree that may be a straight line"
+    ],
+    "canonical": [
+      "98. Validate Binary Search Tree",
+      "230. Kth Smallest Element in a BST",
+      "235. Lowest Common Ancestor of a Binary Search Tree",
+      "701. Insert into a Binary Search Tree",
+      "108. Convert Sorted Array to Binary Search Tree"
+    ]
+  },
+  {
+    "name": "Trie",
+    "one_liner": "Store strings in a shared-prefix tree so prefix queries, autocompletion, and multi-pattern matching cost O(length) instead of O(number of words).",
+    "use_when": [
+      "Repeated prefix queries: startsWith, autocomplete, longest common prefix over many words",
+      "Matching a large dictionary against a grid or a stream (word search II, replace words)",
+      "Wildcard or regex-lite matching over a fixed word set ('.' matches any character)",
+      "Maximum XOR pair / bitwise queries (a binary trie over 32 bits)",
+      "The alphabet is small and you would otherwise scan every word per query"
+    ],
+    "avoid_when": "You only need exact-match membership with no prefix semantics - a set is simpler, faster, and uses far less memory.",
+    "template": "class TrieNode:\n    __slots__ = (\"children\", \"is_word\")\n    def __init__(self):\n        self.children = {}        # KNOB: dict vs [None]*26 array\n        self.is_word = False      # KNOB: bool vs count vs stored payload\n\nclass Trie:\n    def __init__(self):\n        self.root = TrieNode()\n\n    def insert(self, word):\n        node = self.root\n        for ch in word:\n            node = node.children.setdefault(ch, TrieNode())\n        node.is_word = True\n\n    def _walk(self, s):\n        node = self.root\n        for ch in s:\n            node = node.children.get(ch)\n            if node is None:\n                return None\n        return node\n\n    def search(self, word):\n        node = self._walk(word)\n        return node is not None and node.is_word\n\n    def starts_with(self, prefix):\n        return self._walk(prefix) is not None",
+    "knobs": [
+      "Node children as a dict (sparse, any alphabet) vs a fixed array (fast, 26 letters)",
+      "What each node stores: is_word flag, a word count, or the full word for easy output",
+      "Whether deletion is required (needs child counts or lazy flag clearing)",
+      "A binary trie over bit positions for XOR problems instead of a character trie"
+    ],
+    "complexity": "O(L) insert and query per word of length L; O(total characters * alphabet) space.",
+    "pitfalls": [
+      "Returning True from search for a prefix that was never marked is_word",
+      "Rebuilding the trie per query instead of once up front",
+      "Forgetting to prune or mark found words in word-search-II, causing duplicate results",
+      "Memory blowup from fixed 26-slot arrays on a large sparse dictionary"
+    ],
+    "canonical": [
+      "208. Implement Trie (Prefix Tree)",
+      "211. Design Add and Search Words Data Structure",
+      "212. Word Search II",
+      "648. Replace Words",
+      "421. Maximum XOR of Two Numbers in an Array"
+    ]
+  },
+  {
+    "name": "Heap / Priority Queue",
+    "one_liner": "Keep only the elements that can still matter in a binary heap so the current best is O(1) to read and O(log n) to update.",
+    "use_when": [
+      "Top-k / k-th largest / k closest, especially over a stream where sorting all is wasteful",
+      "Repeatedly pull the current minimum or maximum as new items arrive (scheduling, merging)",
+      "Dijkstra, A*, or any 'expand the cheapest frontier node' shortest path with weights",
+      "Median of a stream (two heaps) or any running order statistic",
+      "Greedy where each step needs the extreme element of a changing multiset"
+    ],
+    "avoid_when": "k is close to n or the data is static and you need the full order - a single sort is O(n log n) with a far better constant, and quickselect gives the k-th in O(n) average.",
+    "template": "import heapq\n\ndef top_k(nums, k):\n    heap = []                          # MIN-heap of size k -> keeps the k LARGEST\n    for x in nums:\n        heapq.heappush(heap, x)        # KNOB: push a tuple (key, tiebreak, payload)\n        if len(heap) > k:\n            heapq.heappop(heap)        # evict the smallest survivor\n    return heap                        # heap[0] is the k-th largest\n\ndef dijkstra(graph, src):\n    dist = {src: 0}\n    pq = [(0, src)]                    # (cost, node); Python heaps are MIN-heaps\n    while pq:\n        d, u = heapq.heappop(pq)\n        if d > dist.get(u, float('inf')):\n            continue                   # stale entry: lazy deletion\n        for v, w in graph[u]:\n            nd = d + w\n            if nd < dist.get(v, float('inf')):\n                dist[v] = nd\n                heapq.heappush(pq, (nd, v))\n    return dist",
+    "knobs": [
+      "Min-heap of size k for top-k largest, or negate values to simulate a max-heap",
+      "What the tuple key is, plus a tiebreaker (a counter) so unorderable payloads never compare",
+      "Lazy deletion (skip stale pops) vs an index map for decrease-key",
+      "heapify an existing list in O(n) vs pushing n times in O(n log n)"
+    ],
+    "complexity": "O(log n) per push/pop, O(n) heapify; top-k in O(n log k) time and O(k) space.",
+    "pitfalls": [
+      "Getting the heap direction backwards (min-heap of size k gives the k largest)",
+      "TypeError when tuple keys tie and the next element is not comparable (add a counter)",
+      "Forgetting the stale-entry check in Dijkstra, doing redundant relaxations",
+      "Mutating an object's key while it sits in the heap, breaking the heap invariant"
+    ],
+    "canonical": [
+      "215. Kth Largest Element in an Array",
+      "347. Top K Frequent Elements",
+      "23. Merge k Sorted Lists",
+      "295. Find Median from Data Stream",
+      "743. Network Delay Time"
+    ]
+  },
+  {
+    "name": "Greedy",
+    "one_liner": "Commit to the locally best choice under a proven exchange argument, so one pass replaces a search over all combinations.",
+    "use_when": [
+      "You can argue that taking the earliest-finishing / cheapest / largest item never hurts",
+      "Interval scheduling, jump games, gas stations, or 'minimum number of X' with a clear order",
+      "Sorting by one key makes the decision at each step obvious and irrevocable",
+      "Answer counts a number of operations and each operation has a dominant best form",
+      "A DP formulation exists but the transition always picks the same branch"
+    ],
+    "avoid_when": "A locally worse choice can enable a better global outcome (coin change with arbitrary denominations, 0/1 knapsack) - greedy gives a plausible but wrong answer, so use DP.",
+    "template": "def greedy_scan(items):\n    items.sort(key=lambda it: it[1])      # KNOB: the sort key IS the greedy rule\n    chosen = []\n    boundary = float('-inf')              # KNOB: the state carried forward\n    for it in items:\n        if it[0] >= boundary:             # KNOB: the feasibility test\n            chosen.append(it)\n            boundary = it[1]              # commit; never reconsider\n    return chosen\n\ndef greedy_reach(nums):\n    reach = 0\n    for i, x in enumerate(nums):\n        if i > reach:                     # unreachable -> greedy fails here\n            return False\n        reach = max(reach, i + x)         # always extend as far as possible\n    return True",
+    "knobs": [
+      "The sort key (start, end, ratio, size) - a wrong key silently breaks correctness",
+      "The single piece of state carried forward (last end, current reach, running deficit)",
+      "Whether a heap is needed to re-pick the extreme as the set changes",
+      "Sanity check: can you state the exchange argument in one sentence"
+    ],
+    "complexity": "O(n log n) dominated by the sort, O(n) if already ordered; O(1) extra space typically.",
+    "pitfalls": [
+      "Sorting by start when the correct rule is end (interval scheduling)",
+      "Assuming greedy works without an exchange argument and failing an adversarial case",
+      "Not resetting accumulated state at the point where the greedy invariant breaks (gas station)",
+      "Mishandling ties, where the tiebreak changes the count"
+    ],
+    "canonical": [
+      "55. Jump Game",
+      "435. Non-overlapping Intervals",
+      "134. Gas Station",
+      "621. Task Scheduler",
+      "45. Jump Game II"
+    ]
+  },
+  {
+    "name": "Intervals",
+    "one_liner": "Sort intervals by an endpoint, then sweep once, merging or counting overlaps by comparing each start against the running boundary.",
+    "use_when": [
+      "Input is a list of [start, end] pairs and the answer involves merging, inserting, or overlap",
+      "'Maximum number of concurrent X' (meeting rooms, cars on the road, CPU load)",
+      "Removing the fewest intervals to make the rest disjoint",
+      "Finding free gaps or the intersection of two interval lists",
+      "Events with a begin and an end time that must be reconciled"
+    ],
+    "avoid_when": "Endpoints are added and queried dynamically with interleaved updates - a sorted structure or a segment tree beats re-sorting on every operation.",
+    "template": "def merge(intervals):\n    intervals.sort(key=lambda x: x[0])         # KNOB: sort by start to merge\n    out = []\n    for s, e in intervals:\n        if out and s <= out[-1][1]:            # KNOB: <= touching merges, < it does not\n            out[-1][1] = max(out[-1][1], e)    # extend; do NOT assume e is larger\n        else:\n            out.append([s, e])\n    return out\n\ndef max_concurrent(intervals):\n    import heapq\n    intervals.sort(key=lambda x: x[0])\n    ends = []                                   # min-heap of active end times\n    best = 0\n    for s, e in intervals:\n        while ends and ends[0] <= s:            # KNOB: <= if touching is not overlap\n            heapq.heappop(ends)\n        heapq.heappush(ends, e)\n        best = max(best, len(ends))\n    return best",
+    "knobs": [
+      "Sort by start (merge, insert) vs by end (max non-overlapping count)",
+      "Whether touching endpoints [1,2],[2,3] count as overlapping (< vs <=)",
+      "Sweep with a running boundary vs a min-heap of end times vs a +1/-1 event list",
+      "Whether intervals are guaranteed s <= e and already sorted"
+    ],
+    "complexity": "O(n log n) for the sort plus O(n) sweep; O(n) output space.",
+    "pitfalls": [
+      "Setting out[-1][1] = e instead of max(...), truncating a fully contained interval",
+      "Getting the touching-endpoint convention wrong for the specific problem",
+      "Sorting by start when counting the maximum non-overlapping set (needs end)",
+      "Mutating the caller's intervals in place when that is not allowed"
+    ],
+    "canonical": [
+      "56. Merge Intervals",
+      "57. Insert Interval",
+      "435. Non-overlapping Intervals",
+      "253. Meeting Rooms II",
+      "986. Interval List Intersections"
+    ]
+  },
+  {
+    "name": "Dynamic Programming",
+    "one_liner": "Identify a state whose answer depends only on smaller states, then compute each state once and reuse it, top-down with memoization or bottom-up over a table.",
+    "use_when": [
+      "Asked for the count of ways, the min/max cost, or whether something is achievable",
+      "A brute-force recursion re-solves the same (index, remaining) pairs repeatedly",
+      "The problem decomposes into 'take it or leave it' at each element (knapsack family)",
+      "Two sequences aligned position by position (edit distance, LCS, interleaving)",
+      "A grid path, a subarray optimum, or an interval that splits at every possible point"
+    ],
+    "avoid_when": "The state needed to make a correct decision includes the entire path so far (so states never repeat) - the table degenerates to the search tree and backtracking or greedy is the right tool.",
+    "template": "from functools import lru_cache\n\ndef dp_topdown(nums, target):\n    @lru_cache(maxsize=None)         # state args must be hashable/immutable\n    def f(i, rem):                   # KNOB: the STATE definition\n        if rem == 0:\n            return 1                 # KNOB: base cases\n        if i == len(nums) or rem < 0:\n            return 0\n        take = f(i + 1, rem - nums[i])\n        skip = f(i + 1, rem)\n        return take + skip           # KNOB: the transition/combine\n    return f(0, target)\n\ndef dp_bottomup(nums, target):\n    dp = [0] * (target + 1)\n    dp[0] = 1                        # base case\n    for x in nums:                   # item-outer = combinations (0/1 or unbounded)\n        for r in range(target, x - 1, -1):   # reverse => each item used ONCE\n            dp[r] += dp[r - x]\n    return dp[target]",
+    "knobs": [
+      "The state: the smallest tuple that determines the future (index, remaining, last choice, flags)",
+      "Top-down memo (natural transitions, easy) vs bottom-up table (no recursion limit, rollable)",
+      "Iteration order and direction (reverse inner loop for 0/1 use, forward for unbounded)",
+      "Whether the answer is dp[final] or the max/min over all states, and whether to reconstruct the path"
+    ],
+    "complexity": "O(number of states * transitions per state); space O(states), often reducible to one or two rows.",
+    "pitfalls": [
+      "Wrong base case (dp[0] = 1 for counting vs 0 for cost) poisoning the whole table",
+      "Iterating the inner loop forward when each item may be used only once",
+      "Reading the answer at dp[n] when it should be the max over the table (longest increasing subsequence, max subarray)",
+      "Memoizing on a mutable argument, or forgetting a state variable so distinct states collide"
+    ],
+    "canonical": [
+      "70. Climbing Stairs",
+      "322. Coin Change",
+      "300. Longest Increasing Subsequence",
+      "1143. Longest Common Subsequence",
+      "72. Edit Distance"
+    ]
+  },
+  {
+    "name": "Bit Manipulation",
+    "one_liner": "Treat integers as fixed-width bit vectors so set membership, parity, and subset enumeration become single machine-word operations.",
+    "use_when": [
+      "'Every element appears twice except one' or similar parity/cancellation phrasing",
+      "A subset of at most ~20 items must be tracked as a compact hashable state (bitmask DP)",
+      "Counting set bits, powers of two, single-bit toggles, or bit-position questions",
+      "Swapping/adding/dividing without arithmetic operators, or single-number XOR tricks",
+      "Enumerating all subsets, or all submasks of a mask"
+    ],
+    "avoid_when": "The set is large or sparse (more than ~30-60 elements) - a set or frozenset is clearer and a mask no longer fits comfortably in a word.",
+    "template": "def bit_ops(x, i, mask):\n    get   = (x >> i) & 1            # read bit i\n    setb  = x | (1 << i)            # set bit i\n    clear = x & ~(1 << i)           # clear bit i\n    flip  = x ^ (1 << i)            # toggle bit i\n    lowest = x & -x                 # isolate lowest set bit\n    strip  = x & (x - 1)            # clear lowest set bit\n    popc   = bin(x).count('1')      # or x.bit_count() on 3.10+\n    return get, setb, clear, flip, lowest, strip, popc\n\ndef all_subsets(nums):\n    n = len(nums)\n    for mask in range(1 << n):                 # KNOB: 2^n masks\n        subset = [nums[i] for i in range(n) if mask >> i & 1]\n        yield subset\n\ndef single_number(nums):\n    acc = 0\n    for x in nums:\n        acc ^= x                     # pairs cancel; the loner survives\n    return acc",
+    "knobs": [
+      "Which bit-length you assume (Python ints are unbounded; mask with & 0xFFFFFFFF for 32-bit semantics)",
+      "Bitmask as a DP state (dp over 1<<n) vs as a plain set-membership trick",
+      "XOR (cancellation) vs OR (accumulate) vs AND (common prefix)",
+      "Whether negative numbers need explicit two's-complement handling"
+    ],
+    "complexity": "O(1) per bit operation; O(2^n * n) to enumerate subsets, O(3^n) for all submask pairs.",
+    "pitfalls": [
+      "Python ints have no overflow, so 32-bit problems need explicit masking and sign conversion",
+      "Precedence: & and | bind looser than ==, so parenthesize comparisons",
+      "Using >> on a negative number and expecting a logical (zero-fill) shift",
+      "Off-by-one in 1 << n versus 1 << (n - 1) when sizing the mask range"
+    ],
+    "canonical": [
+      "136. Single Number",
+      "191. Number of 1 Bits",
+      "338. Counting Bits",
+      "78. Subsets",
+      "371. Sum of Two Integers"
+    ]
+  },
+  {
+    "name": "Math",
+    "one_liner": "Replace a simulation with a closed form, a number-theoretic property, or modular arithmetic so the answer is computed rather than enumerated.",
+    "use_when": [
+      "Constraints are astronomically large (n up to 1e9 or 1e18) so any per-step loop is impossible",
+      "GCD/LCM, primes, divisors, factorials, or modular inverse appear in the statement",
+      "The answer must be returned modulo 1e9+7 (a hint that counting is combinatorial)",
+      "Digit manipulation, base conversion, or reversing/palindromic numbers",
+      "Probability, expected value, or a geometric/arithmetic series"
+    ],
+    "avoid_when": "n is small and the closed form is not obvious - a straightforward simulation or DP is correct on the first try and a half-remembered formula is not.",
+    "template": "from math import gcd, isqrt\n\nMOD = 10 ** 9 + 7\n\ndef lcm(a, b):\n    return a // gcd(a, b) * b           # divide BEFORE multiplying to limit growth\n\ndef is_prime(n):\n    if n < 2:\n        return False\n    for p in range(2, isqrt(n) + 1):    # KNOB: trial division only to sqrt(n)\n        if n % p == 0:\n            return False\n    return True\n\ndef sieve(n):\n    prime = [True] * (n + 1)\n    prime[0:2] = [False, False]\n    for p in range(2, isqrt(n) + 1):\n        if prime[p]:\n            for m in range(p * p, n + 1, p):   # start at p*p, not 2*p\n                prime[m] = False\n    return [i for i, ok in enumerate(prime) if ok]\n\ndef power_mod(base, exp, mod=MOD):\n    return pow(base, exp, mod)          # fast modular exponentiation, O(log exp)",
+    "knobs": [
+      "Closed form vs iterative accumulation vs precomputed table (sieve, factorials)",
+      "Whether every intermediate needs a % MOD (and using pow(x, MOD-2, MOD) for division)",
+      "Integer vs float: prefer // and isqrt over int(x ** 0.5) to dodge precision errors",
+      "Overflow-free ordering of multiply and divide"
+    ],
+    "complexity": "Usually O(1), O(log n) for gcd and fast power, or O(n log log n) for a sieve.",
+    "pitfalls": [
+      "Float precision in sqrt/log making a perfect square test off by one",
+      "Forgetting to take the modulus on intermediate products",
+      "Python's % returning a non-negative result for negative operands (differs from C)",
+      "Not handling n = 0, n = 1, or negative inputs in a formula derived for the general case"
+    ],
+    "canonical": [
+      "7. Reverse Integer",
+      "50. Pow(x, n)",
+      "204. Count Primes",
+      "172. Factorial Trailing Zeroes",
+      "263. Ugly Number"
+    ]
+  },
+  {
+    "name": "Matrix",
+    "one_liner": "Work with 2D index arithmetic directly - transposes, layer-by-layer boundaries, and direction deltas - usually in place to hit the O(1) space requirement.",
+    "use_when": [
+      "The input is a grid and the task is rotation, transposition, or spiral traversal",
+      "You must mark state inside the grid itself because O(1) extra space is required",
+      "Diagonal or anti-diagonal grouping (r + c or r - c is constant along one)",
+      "A sorted 2D matrix must be searched as if it were one flat sorted array",
+      "Neighbor iteration over 4 or 8 directions with bounds checks"
+    ],
+    "avoid_when": "The grid is really a graph and the question is connectivity or shortest path - then it is BFS/DFS/Union-Find with the grid as an implicit adjacency, not index arithmetic.",
+    "template": "def rotate_in_place(m):\n    n = len(m)\n    for r in range(n):                       # transpose\n        for c in range(r + 1, n):\n            m[r][c], m[c][r] = m[c][r], m[r][c]\n    for row in m:                            # then reverse each row -> 90 deg CW\n        row.reverse()\n\ndef spiral(m):\n    if not m or not m[0]:\n        return []\n    top, bot, left, right = 0, len(m) - 1, 0, len(m[0]) - 1\n    out = []\n    while top <= bot and left <= right:      # KNOB: <= keeps a single row/col alive\n        for c in range(left, right + 1):\n            out.append(m[top][c])\n        top += 1\n        for r in range(top, bot + 1):\n            out.append(m[r][right])\n        right -= 1\n        if top <= bot:                       # guard: the row may be exhausted\n            for c in range(right, left - 1, -1):\n                out.append(m[bot][c])\n            bot -= 1\n        if left <= right:                    # guard: the column may be exhausted\n            for r in range(bot, top - 1, -1):\n                out.append(m[r][left])\n            left += 1\n    return out",
+    "knobs": [
+      "In-place mutation vs building a new grid",
+      "Row-major vs column-major vs diagonal (key on r + c or r - c) iteration order",
+      "4-directional vs 8-directional neighbor deltas",
+      "How to encode extra state in the cell itself (a sentinel value or a second bit)"
+    ],
+    "complexity": "O(rows * cols) time; O(1) extra space when done in place.",
+    "pitfalls": [
+      "Creating rows with [[0] * c] * r, which aliases the same list r times",
+      "Transposing over the full range instead of c > r, undoing the swap",
+      "Missing the top <= bot / left <= right guards in a spiral on a single-row matrix",
+      "Reading and writing the same cell in a simultaneous-update simulation (Game of Life needs encoded states)"
+    ],
+    "canonical": [
+      "48. Rotate Image",
+      "54. Spiral Matrix",
+      "73. Set Matrix Zeroes",
+      "240. Search a 2D Matrix II",
+      "289. Game of Life"
+    ]
+  }
+]

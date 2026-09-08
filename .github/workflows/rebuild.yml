@@ -1,0 +1,42 @@
+name: Rebuild deck
+
+# Pulls the latest solutions from the leetcode dump and rebuilds the site.
+# Runs every night, and on demand from the Actions tab.
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - 'app/template.html'
+      - 'scripts/**'
+      - 'data/**'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Clone the solution dump
+        run: git clone --quiet https://github.com/Proga97/leetcode_dump.git .cache/leetcode_dump
+      - name: Parse problems
+        run: python3 scripts/build_problems.py .cache/leetcode_dump
+      - name: Build site
+        run: python3 scripts/build_app.py
+      - name: Commit if the deck changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/problems.json docs dist
+          if git diff --staged --quiet; then
+            echo "No change."
+          else
+            git commit -m "Rebuild deck from leetcode_dump"
+            git push
+          fi
