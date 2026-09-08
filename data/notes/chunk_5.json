@@ -1,0 +1,661 @@
+[
+  {
+    "id": "1763-longest-nice-substring",
+    "patterns": ["Divide & Conquer", "Recursion", "String"],
+    "trigger": "A substring must satisfy a property for every character it contains, and a single bad character can never be inside any valid answer.",
+    "key_idea": "Any character whose opposite case is absent can never be part of a nice substring, so it splits the problem: recurse on the left and right pieces and keep the longer.",
+    "approach": [
+      "Build a set of characters present in the current string.",
+      "Scan for the first char whose swapped-case partner is missing.",
+      "If none is missing, the whole string is nice; return it.",
+      "Otherwise recurse on s[:i] and s[i+1:].",
+      "Return the longer result, preferring the left on ties."
+    ],
+    "complexity": {"time": "O(n * 26) recursive splits, O(n^2) worst case", "space": "O(n) recursion depth"},
+    "gotcha": "Ties must return the earliest occurrence, so compare with >= in favor of the left half; also strings shorter than 2 can never be nice."
+  },
+  {
+    "id": "1832-check-if-the-sentence-is-pangram",
+    "patterns": ["Hash Map", "String"],
+    "trigger": "You need to know whether every letter of a fixed small alphabet appears at least once.",
+    "key_idea": "Collect distinct letters into a set; the sentence is a pangram exactly when the set has 26 entries.",
+    "approach": [
+      "Create an empty set.",
+      "Add every character of the sentence to it.",
+      "Return whether the set size equals 26."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(1) since at most 26 entries"},
+    "gotcha": "A 26-bit integer mask works too, but do not forget the input is guaranteed lowercase; mixed case would need normalization."
+  },
+  {
+    "id": "1838-frequency-of-the-most-frequent-element",
+    "patterns": ["Sliding Window", "Sorting", "Prefix Sum"],
+    "trigger": "You can raise elements with a limited budget k and want the largest group made equal, which hints at a window over sorted values.",
+    "key_idea": "After sorting, the best target for a window is its rightmost value; the window is valid when (length * nums[r]) - windowSum <= k.",
+    "approach": [
+      "Sort nums and keep a running window sum.",
+      "Expand r one at a time, adding nums[r] to the sum.",
+      "While window_len * nums[r] > sum + k, shrink from the left.",
+      "Track the maximum window length seen.",
+      "Return that maximum."
+    ],
+    "complexity": {"time": "O(n log n)", "space": "O(1) extra beyond sorting"},
+    "gotcha": "Use the running sum instead of recomputing, and note the window never needs to shrink below its previous best, so a non-shrinking window also works."
+  },
+  {
+    "id": "1852-distinct-numbers-in-each-subarray",
+    "patterns": ["Sliding Window", "Hash Map"],
+    "trigger": "You need a statistic for every fixed-size window of an array, so recompute incrementally instead of from scratch.",
+    "key_idea": "Maintain a frequency map for the current window; the distinct count is the map's size, updated by removing the outgoing element and adding the incoming one.",
+    "approach": [
+      "Fill a frequency map with the first k elements.",
+      "Record its size as the first answer.",
+      "For each new index, decrement the outgoing element's count.",
+      "Delete the key when its count hits zero.",
+      "Increment the incoming element, append the map size."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(k)"},
+    "gotcha": "Forgetting to delete zero-count keys makes len(freq) overcount distinct elements."
+  },
+  {
+    "id": "1854-maximum-population-year",
+    "patterns": ["Prefix Sum", "Intervals"],
+    "trigger": "Many intervals overlap a small bounded range of years and you need the point covered by the most intervals.",
+    "key_idea": "Use a difference array: +1 at birth, -1 at death, then a running prefix sum gives the population of each year in order.",
+    "approach": [
+      "Allocate an array covering years 1950 to 2050.",
+      "For each person add 1 at birth and subtract 1 at death.",
+      "Sweep years accumulating a running population.",
+      "Update the answer only on a strictly greater population.",
+      "Return the year with the first maximum."
+    ],
+    "complexity": {"time": "O(n + range)", "space": "O(range)"},
+    "gotcha": "A person is not alive in their death year, so the -1 goes at death, not death + 1, and use strict > to keep the earliest year."
+  },
+  {
+    "id": "1887-reduction-operations-to-make-the-array-elements-equal",
+    "patterns": ["Sorting", "Greedy"],
+    "trigger": "Repeatedly reducing the largest value to the next distinct value, so count how many steps each element must take.",
+    "key_idea": "Each element must be reduced once per distinct value below it, so after sorting descending, every time the value changes, all elements seen so far need one more operation.",
+    "approach": [
+      "Sort nums in descending order.",
+      "Keep a counter of elements processed so far.",
+      "Whenever nums[i] differs from nums[i-1], add the counter to the result.",
+      "Increment the counter for each element.",
+      "Return the result."
+    ],
+    "complexity": {"time": "O(n log n)", "space": "O(1) extra"},
+    "gotcha": "Equal adjacent values do not add operations, so compare with the previous element rather than adding on every index."
+  },
+  {
+    "id": "1971-find-if-path-exists-in-graph",
+    "patterns": ["DFS", "Graph", "Union-Find"],
+    "trigger": "Undirected graph given as an edge list and you must decide whether two vertices are connected.",
+    "key_idea": "Build an adjacency list and traverse from source with a visited array; reaching destination means a path exists.",
+    "approach": [
+      "Build an adjacency list from the edge list in both directions.",
+      "Push source on a stack and mark it seen.",
+      "Pop a node and iterate its neighbors.",
+      "Return true if a neighbor is destination; otherwise push unseen neighbors.",
+      "Return whether destination was seen after the loop."
+    ],
+    "complexity": {"time": "O(V + E)", "space": "O(V + E)"},
+    "gotcha": "Handle source == destination, and mark nodes seen when pushed, not when popped, to avoid duplicate stack entries."
+  },
+  {
+    "id": "1979-find-greatest-common-divisor-of-array",
+    "patterns": ["Math"],
+    "trigger": "Asked for the greatest common divisor of two specific numbers derived from an array.",
+    "key_idea": "Only min and max matter; the Euclidean algorithm gcd(a, b) = gcd(b, a mod b) finds their GCD quickly.",
+    "approach": [
+      "Find the minimum and maximum of nums.",
+      "Apply Euclid: while b, set a, b = b, a % b.",
+      "Return a."
+    ],
+    "complexity": {"time": "O(n + log(max))", "space": "O(1)"},
+    "gotcha": "The learner's descending trial loop is O(min) which is fine here but Euclid or math.gcd is the standard, and the answer is at least 1 since all values are positive."
+  },
+  {
+    "id": "1991-find-the-middle-index-in-array",
+    "patterns": ["Prefix Sum"],
+    "trigger": "You need an index where the sum on the left equals the sum on the right.",
+    "key_idea": "Right sum equals total - leftSum - nums[i], so one pass with a running left sum avoids building suffix arrays.",
+    "approach": [
+      "Compute the total sum of nums.",
+      "Iterate with a running leftSum starting at 0.",
+      "Compute rightSum as total - leftSum - nums[i].",
+      "Return i when leftSum equals rightSum.",
+      "Add nums[i] to leftSum; return -1 if none found."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(1)"},
+    "gotcha": "Check equality before adding nums[i] to leftSum, and index 0 counts with an empty left side."
+  },
+  {
+    "id": "2058-find-the-minimum-and-maximum-number-of-nodes-between-critical-points",
+    "patterns": ["Linked List"],
+    "trigger": "Local minima and maxima in a linked list require looking at previous, current, and next nodes at once.",
+    "key_idea": "Walk three pointers and record the index of each critical point; max distance is last minus first, min distance is the smallest gap between consecutive ones.",
+    "approach": [
+      "Return [-1,-1] if the list has fewer than 3 nodes.",
+      "Walk prev, curr, next together tracking the 1-based index of curr.",
+      "Append the index when curr is strictly above or below both neighbors.",
+      "If fewer than 2 critical points, return [-1,-1].",
+      "Compute min of consecutive gaps and last minus first."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(n) for indices, O(1) if tracking first, last, and previous only"},
+    "gotcha": "Comparisons must be strict, and the head and tail can never be critical points because they lack a neighbor."
+  },
+  {
+    "id": "2069-walking-robot-simulation-ii",
+    "patterns": ["Simulation", "Design", "Math"],
+    "trigger": "A robot walks around the border of a grid with huge step counts, so simulate positions modulo the perimeter.",
+    "key_idea": "The robot only ever traverses the boundary, so reduce num modulo the perimeter 2*(w+h)-4 and then step at most one loop; a full multiple of the perimeter returns to (0,0) facing South, not East.",
+    "approach": [
+      "Store position, direction, and perimeter = 2w + 2h - 4.",
+      "On step, reduce num modulo perimeter; treat 0 as a full loop.",
+      "Walk one cell at a time in the current direction.",
+      "When the next cell is out of bounds, turn counterclockwise and retry.",
+      "getPos and getDir return the stored state."
+    ],
+    "complexity": {"time": "O(perimeter) per step call, O(1) with direct arithmetic", "space": "O(1)"},
+    "gotcha": "After a full loop the robot ends at (0,0) facing South, so num % perimeter == 0 must walk the full perimeter rather than doing nothing, except before any move where it faces East."
+  },
+  {
+    "id": "2091-removing-minimum-and-maximum-from-array",
+    "patterns": ["Greedy", "Math"],
+    "trigger": "Elements can only be removed from either end and you must remove two specific positions with minimum deletions.",
+    "key_idea": "Only three strategies exist: remove both from the front, both from the back, or one from each end; take the minimum.",
+    "approach": [
+      "Find indices of the min and max elements.",
+      "Let lo be the smaller index and hi the larger.",
+      "Front only: hi + 1 deletions.",
+      "Back only: n - lo deletions.",
+      "Mixed: (lo + 1) + (n - hi); return the minimum."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(1)"},
+    "gotcha": "When min and max are the same element (single-element array) the answer is index + 1, and using min/max of the two indices avoids case-splitting on which comes first."
+  },
+  {
+    "id": "2156-stone-game-ix",
+    "patterns": ["Math", "Greedy"],
+    "trigger": "A two-player game where only divisibility by 3 matters, so reduce stones to their residues mod 3 and count them.",
+    "key_idea": "Only counts of residues 0, 1, 2 matter; zeros act as turn-skippers, so parity of cnt0 decides whether Alice needs both residues present or a large imbalance between cnt1 and cnt2.",
+    "approach": [
+      "Count stones by value mod 3 into cnt0, cnt1, cnt2.",
+      "If cnt0 is even, Alice wins when cnt1 >= 1 and cnt2 >= 1.",
+      "If cnt0 is odd, Alice wins when |cnt1 - cnt2| > 2.",
+      "Return the boolean."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(1)"},
+    "gotcha": "Bob wins if stones run out, so Alice cannot simply stall; with odd cnt0 the zero flips who gets stuck, requiring an imbalance of at least 3."
+  },
+  {
+    "id": "2181-merge-nodes-in-between-zeros",
+    "patterns": ["Linked List", "Simulation"],
+    "trigger": "A linked list is segmented by sentinel zero nodes and each segment must collapse into one node.",
+    "key_idea": "Reuse the first node of each segment as the merged node: sum the segment values into it, then link it directly to the first node of the next segment, skipping the zero.",
+    "approach": [
+      "Start at head.next as both the segment holder and scanner.",
+      "Accumulate values until the scanner hits a zero.",
+      "Store the sum in the holder node.",
+      "Advance the scanner past the zero and link holder.next to it.",
+      "Move holder to that node; return head.next when done."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(1)"},
+    "gotcha": "The list begins and ends with 0, so start from head.next and stop when the scanner becomes None, otherwise you read val on None."
+  },
+  {
+    "id": "2363-merge-similar-items",
+    "patterns": ["Hash Map", "Sorting"],
+    "trigger": "Two lists of key-value pairs must be combined by key with values summed and output sorted.",
+    "key_idea": "A dictionary keyed by value accumulates weights from both lists; sort the items at the end.",
+    "approach": [
+      "Create a defaultdict of ints.",
+      "Add each weight from items1 and items2 to its value key.",
+      "Convert entries to [value, weight] lists.",
+      "Sort by value and return."
+    ],
+    "complexity": {"time": "O((n + m) log(n + m))", "space": "O(n + m)"},
+    "gotcha": "Output must be sorted by value, so do not rely on dict insertion order."
+  },
+  {
+    "id": "2384-largest-palindromic-number",
+    "patterns": ["Greedy", "Hash Map", "String"],
+    "trigger": "Build the largest number from digit counts with a symmetric structure, which calls for greedy placement from 9 down.",
+    "key_idea": "Pairs of a digit go on both sides, placed from 9 to 0 for maximum value; the single largest leftover digit goes in the middle, and zeros cannot lead.",
+    "approach": [
+      "Count digit frequencies.",
+      "For digits 9 down to 0, append count // 2 copies to the left half.",
+      "Skip zeros if the left half is still empty.",
+      "Remember the first digit with an odd count as the middle.",
+      "Return left + middle + reversed left, or \"0\" if empty."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(n)"},
+    "gotcha": "Inputs like \"00009\" must return \"9\" and \"000\" must return \"0\", so handle leading-zero pairs and the all-empty case."
+  },
+  {
+    "id": "2390-removing-stars-from-a-string",
+    "patterns": ["Stack", "String"],
+    "trigger": "An operation removes the closest character to the left, which is exactly stack pop semantics.",
+    "key_idea": "Push non-star characters; a star pops the most recently pushed character.",
+    "approach": [
+      "Iterate over the string.",
+      "Push regular characters onto a stack.",
+      "On a star, pop the stack.",
+      "Join the stack into the result."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(n)"},
+    "gotcha": "Build the result with join on a list rather than repeated string concatenation to stay linear."
+  },
+  {
+    "id": "2487-remove-nodes-from-linked-list",
+    "patterns": ["Monotonic Stack", "Linked List"],
+    "trigger": "Remove every element that has a greater element somewhere to its right, which is the classic next-greater-element stack question.",
+    "key_idea": "Maintain a stack of nodes with non-increasing values; when a larger node arrives, pop everything smaller since those nodes must be removed, then relink the stack top to the new node.",
+    "approach": [
+      "Walk the list with a stack of nodes.",
+      "While the stack top's value is less than curr.val, pop it.",
+      "If the stack is nonempty, set top.next to curr.",
+      "Push curr and advance.",
+      "Return the bottom of the stack as the new head."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(n)"},
+    "gotcha": "Equal values must be kept, so pop on strictly less; alternatively reverse the list, keep a running max, then reverse back for O(1) space."
+  },
+  {
+    "id": "2513-minimize-the-maximum-of-two-arrays",
+    "patterns": ["Binary Search", "Math"],
+    "trigger": "Minimize the maximum value subject to counting constraints, and feasibility of a candidate is monotonic, so binary search on the answer.",
+    "key_idea": "For a candidate x, numbers not divisible by d1 are x - x//d1, not divisible by d2 are x - x//d2, and not divisible by either are x - x//lcm; check all three counts are enough.",
+    "approach": [
+      "Compute lcm of divisor1 and divisor2.",
+      "Binary search x between cnt1 + cnt2 and a safe upper bound.",
+      "Feasible if x - x//d1 >= cnt1, x - x//d2 >= cnt2, x - x//lcm >= cnt1 + cnt2.",
+      "Move high down when feasible, low up otherwise.",
+      "Return low."
+    ],
+    "complexity": {"time": "O(log(range))", "space": "O(1)"},
+    "gotcha": "Checking only the two individual conditions is not enough; the combined lcm condition prevents both arrays from claiming the same numbers."
+  },
+  {
+    "id": "2529-maximum-count-of-positive-integer-and-negative-integer",
+    "patterns": ["Binary Search"],
+    "trigger": "A sorted array where you want counts of values below or above a threshold, which is a lower-bound and upper-bound search.",
+    "key_idea": "Find the first index with value >= 0 (count of negatives) and the first index with value > 0 (positives are n minus that).",
+    "approach": [
+      "Binary search for the first index where nums[mid] >= 0; that is neg.",
+      "Binary search for the first index where nums[mid] > 0.",
+      "Positives = n - that index.",
+      "Return max(neg, pos)."
+    ],
+    "complexity": {"time": "O(log n)", "space": "O(1)"},
+    "gotcha": "Zeros are neither positive nor negative, so use two different boundaries (>= 0 and > 0) rather than one, and initialize the boundary to n for the all-negative case."
+  },
+  {
+    "id": "2540-minimum-common-value",
+    "patterns": ["Two Pointers"],
+    "trigger": "Two sorted arrays and you want the smallest shared element, which is a merge-style walk.",
+    "key_idea": "Advance the pointer of whichever array has the smaller current value; the first equal pair is the minimum common value.",
+    "approach": [
+      "Start pointers i and j at 0.",
+      "If nums1[i] < nums2[j], advance i; if greater, advance j.",
+      "On equality return that value.",
+      "Return -1 if either pointer runs off the end."
+    ],
+    "complexity": {"time": "O(n + m)", "space": "O(1)"},
+    "gotcha": "Since both arrays are sorted, the first match found is automatically the minimum; no need to scan all matches."
+  },
+  {
+    "id": "2558-take-gifts-from-the-richest-pile",
+    "patterns": ["Heap / Priority Queue", "Simulation"],
+    "trigger": "Repeatedly pick the current maximum and replace it with a reduced value k times.",
+    "key_idea": "A max-heap (negated values in Python) gives the largest pile in O(log n) per round.",
+    "approach": [
+      "Build a max-heap by negating all gift counts.",
+      "Repeat k times: pop the max, take floor of its square root, push it back.",
+      "Return the negated sum of the heap."
+    ],
+    "complexity": {"time": "O(n + k log n)", "space": "O(n)"},
+    "gotcha": "Python's heapq is a min-heap, so negate on push and pop, and use integer square root (isqrt) to avoid float rounding issues."
+  },
+  {
+    "id": "2574-left-and-right-sum-differences",
+    "patterns": ["Prefix Sum"],
+    "trigger": "Each answer depends on the sum of everything to the left and everything to the right of an index.",
+    "key_idea": "Build prefix sums from the left and suffix sums from the right, or use a running left sum with rightSum = total - leftSum - nums[i].",
+    "approach": [
+      "Compute the total sum of nums.",
+      "Iterate with a running leftSum.",
+      "Compute rightSum = total - leftSum - nums[i].",
+      "Append |leftSum - rightSum|.",
+      "Add nums[i] to leftSum."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(n) for output, O(1) extra"},
+    "gotcha": "The learner's prefix/suffix arrays are fine, but be careful with negative-index arithmetic in the suffix loop; the single-pass total-minus-left version is easier to get right."
+  },
+  {
+    "id": "2643-row-with-maximum-ones",
+    "patterns": ["Matrix"],
+    "trigger": "Scan each row of a binary matrix and report the best row by a simple count.",
+    "key_idea": "Sum each row (ones count) and keep the first row that achieves a strictly larger count.",
+    "approach": [
+      "Track best index and best count starting at 0.",
+      "For each row, count its ones with sum.",
+      "Update only when the count is strictly greater.",
+      "Return [best index, best count]."
+    ],
+    "complexity": {"time": "O(m * n)", "space": "O(1)"},
+    "gotcha": "Ties must pick the smallest row index, so use strict > and not >= when updating."
+  },
+  {
+    "id": "2707-extra-characters-in-a-string",
+    "patterns": ["Dynamic Programming", "Trie", "String"],
+    "trigger": "Break a string into dictionary words minimizing leftovers, a word-break style DP over start indices.",
+    "key_idea": "dp[i] is the minimum extra characters in s[i:]; either skip s[i] as extra (1 + dp[i+1]) or match a dictionary word starting at i and jump to its end; a trie prunes word matching.",
+    "approach": [
+      "Insert all dictionary words into a trie.",
+      "Define dfs(i) with memo, base dp[len(s)] = 0.",
+      "Start with res = 1 + dfs(i + 1) for skipping s[i].",
+      "Walk the trie from i; at each word end take min with dfs(j + 1).",
+      "Break when the trie has no child; return dfs(0)."
+    ],
+    "complexity": {"time": "O(n * L) with a trie where L is max word length, O(n^2 + total dict chars) with a set", "space": "O(n + total dict chars)"},
+    "gotcha": "Without a trie or a hash set, checking every substring against the dictionary list is too slow; and forgetting the skip option leaves no answer when no word matches."
+  },
+  {
+    "id": "2762-continuous-subarrays",
+    "patterns": ["Sliding Window", "Monotonic Stack", "Queue / Deque"],
+    "trigger": "Count subarrays where max minus min stays within a bound, which needs window min and max in O(1).",
+    "key_idea": "Keep two monotonic deques for the window min and max; shrink from the left while max - min > 2, and every valid window ending at r adds r - l + 1 subarrays.",
+    "approach": [
+      "For each r, pop from the min-deque while its back is >= nums[r].",
+      "Pop from the max-deque while its back is <= nums[r]; push r to both.",
+      "While front max minus front min > 2, advance l.",
+      "Drop deque fronts whose index is now below l.",
+      "Add r - l + 1 to the answer."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(n)"},
+    "gotcha": "Store indices, not values, in the deques so you can evict entries that fall out of the window."
+  },
+  {
+    "id": "2785-sort-vowels-in-a-string",
+    "patterns": ["Sorting", "Hash Map", "String"],
+    "trigger": "Only one class of characters must be reordered while others stay fixed; extract, sort, and refill.",
+    "key_idea": "Collect vowels, sort them by ASCII (uppercase before lowercase), then walk the string writing the next sorted vowel into each vowel slot.",
+    "approach": [
+      "Collect all vowels from s into a list.",
+      "Sort that list.",
+      "Iterate s, copying consonants unchanged.",
+      "At each vowel position, write the next sorted vowel.",
+      "Join and return."
+    ],
+    "complexity": {"time": "O(n log n), or O(n) with counting sort over 10 vowels", "space": "O(n)"},
+    "gotcha": "Uppercase vowels sort before lowercase by ASCII, so the fixed order is AEIOUaeiou, not case-insensitive alphabetical."
+  },
+  {
+    "id": "2944-minimum-number-of-coins-for-fruits",
+    "patterns": ["Dynamic Programming", "Queue / Deque"],
+    "trigger": "Buying item i unlocks the next i items free, so the choice of the next purchase ranges over a window, a DP with range-minimum.",
+    "key_idea": "dp[i] = prices[i-1] + min(dp[j]) for j in [i+1, 2i+1] (1-indexed); a monotonic deque gives that window minimum in amortized O(1) as i moves backward.",
+    "approach": [
+      "Work backward from i = n to 1 with dp[n+1] = 0.",
+      "Pop deque back while its dp value >= dp[i+1], then push i+1.",
+      "Pop deque front while its index exceeds 2i + 1.",
+      "If 2i >= n, dp[i] = prices[i-1]; else add dp[front].",
+      "Return dp[1]."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(n)"},
+    "gotcha": "Buying fruit i means you must still pay for it even if it was free; the window [i+1, 2i+1] must include 2i+1 because the next purchase can be the first fruit after the free run."
+  },
+  {
+    "id": "2958-length-of-longest-subarray-with-at-most-k-frequency",
+    "patterns": ["Sliding Window", "Hash Map"],
+    "trigger": "Longest contiguous subarray where every element's frequency is bounded, a classic variable-size window.",
+    "key_idea": "Only the newly added element can break the constraint, so shrink from the left until its frequency drops to k.",
+    "approach": [
+      "Expand r and increment freq[nums[r]].",
+      "While freq[nums[r]] > k, decrement freq[nums[l]] and advance l.",
+      "Update the best length with r - l + 1.",
+      "Return the best length."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(n)"},
+    "gotcha": "Check only the frequency of the element just added; checking every key in the map makes each step O(n)."
+  },
+  {
+    "id": "2966-divide-array-into-arrays-with-max-difference",
+    "patterns": ["Sorting", "Greedy"],
+    "trigger": "Partition into fixed-size groups minimizing spread within each group; sorting and taking consecutive chunks is optimal.",
+    "key_idea": "After sorting, consecutive triples have the smallest possible spread, so if any sorted triple has nums[i+2] - nums[i] > k, no valid partition exists.",
+    "approach": [
+      "Sort nums.",
+      "Step through in chunks of 3.",
+      "If nums[i+2] - nums[i] > k, return [].",
+      "Otherwise append the triple.",
+      "Return the list of triples."
+    ],
+    "complexity": {"time": "O(n log n)", "space": "O(n) for output"},
+    "gotcha": "Only the first and last of each sorted triple need comparing; the middle element is automatically within range."
+  },
+  {
+    "id": "2996-smallest-missing-integer-greater-than-sequential-prefix-sum",
+    "patterns": ["Hash Map", "Simulation"],
+    "trigger": "Find a run of consecutive values at the array start, then search for a missing value at or above a threshold.",
+    "key_idea": "Sum the longest prefix where each element is previous + 1, then put nums in a set and increment the candidate until it is not present.",
+    "approach": [
+      "Start total at nums[0].",
+      "Add nums[i] while nums[i] == nums[i-1] + 1; break otherwise.",
+      "Convert nums to a set.",
+      "While total is in the set, increment total.",
+      "Return total."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(n)"},
+    "gotcha": "The prefix always includes nums[0] even if nums[1] breaks the sequence, and the missing value can equal the sum itself."
+  },
+  {
+    "id": "3069-distribute-elements-into-two-arrays-i",
+    "patterns": ["Simulation"],
+    "trigger": "The rules describe exactly how each element is placed based on the current tails of two lists; just simulate.",
+    "key_idea": "Seed arr1 with nums[0] and arr2 with nums[1], then append each following element to whichever array has the larger last element.",
+    "approach": [
+      "Initialize arr1 = [nums[0]] and arr2 = [nums[1]].",
+      "For each remaining element, compare arr1[-1] and arr2[-1].",
+      "Append to arr1 if its last is greater, else arr2.",
+      "Return arr1 + arr2."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(n)"},
+    "gotcha": "The comparison is strictly greater for arr1, so ties go to arr2 (though values are distinct here)."
+  },
+  {
+    "id": "3074-apple-redistribution-into-boxes",
+    "patterns": ["Greedy", "Sorting"],
+    "trigger": "Minimize the number of containers needed for a total amount; always pick the largest containers first.",
+    "key_idea": "Packs can be split across boxes, so only the total apple count matters; sort capacities descending and take boxes until the running capacity covers the total.",
+    "approach": [
+      "Sum all apples.",
+      "Sort capacities in descending order.",
+      "Accumulate capacities one by one.",
+      "Return the count as soon as the accumulated capacity >= total."
+    ],
+    "complexity": {"time": "O(m log m + n)", "space": "O(1) extra"},
+    "gotcha": "Do not try to fit packs individually; the note that packs may be split means bin-packing is unnecessary."
+  },
+  {
+    "id": "3090-maximum-length-substring-with-two-occurrences",
+    "patterns": ["Sliding Window", "Hash Map"],
+    "trigger": "Longest substring where each character appears at most a fixed number of times, a frequency-bounded window.",
+    "key_idea": "Grow the window, and whenever the newly added character exceeds two occurrences, shrink from the left until it is back to two.",
+    "approach": [
+      "Expand r and increment freq[s[r]].",
+      "While freq[s[r]] > 2, decrement freq[s[l]] and advance l.",
+      "Track the maximum r - l + 1.",
+      "Return the maximum."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(1) since at most 26 keys"},
+    "gotcha": "Same template as at-most-k-frequency with k = 2; only the just-added character can violate the bound."
+  },
+  {
+    "id": "3345-smallest-divisible-digit-product-i",
+    "patterns": ["Math", "Simulation"],
+    "trigger": "Search for the smallest number at or above n meeting a digit condition when a nearby answer is guaranteed.",
+    "key_idea": "Within any 10 consecutive integers one ends in 0, whose digit product is 0 and divisible by anything, so brute force at most 10 candidates.",
+    "approach": [
+      "Loop i from n to n + 9.",
+      "Compute the product of the digits of i.",
+      "Return i when the product is divisible by t."
+    ],
+    "complexity": {"time": "O(10 * digits)", "space": "O(1)"},
+    "gotcha": "A digit product of 0 counts as divisible by t, which is why the search is bounded to 10 steps."
+  },
+  {
+    "id": "3536-maximum-product-of-two-digits",
+    "patterns": ["Math", "Greedy"],
+    "trigger": "Maximize a product of two digits from a number; you just need the two largest digits.",
+    "key_idea": "Track the largest and second largest digits in one pass, allowing repeats of the same digit value.",
+    "approach": [
+      "Iterate the digits of n as a string.",
+      "If digit >= n1, shift n1 into n2 and set n1 to the digit.",
+      "Else if digit > n2, set n2 to the digit.",
+      "Return n1 * n2."
+    ],
+    "complexity": {"time": "O(digits)", "space": "O(1)"},
+    "gotcha": "Use >= when updating the top so a repeated max digit correctly fills both slots (e.g. 99 gives 81)."
+  },
+  {
+    "id": "3622-check-divisibility-by-digit-sum-and-product",
+    "patterns": ["Math"],
+    "trigger": "Compute digit sum and digit product of a number and test a divisibility condition.",
+    "key_idea": "Peel digits with mod 10 and integer division, accumulating sum and product, then check n mod (sum + product).",
+    "approach": [
+      "Save a copy of n.",
+      "While n > 0, take n % 10 into sum and product; divide n by 10.",
+      "Return original % (sum + product) == 0."
+    ],
+    "complexity": {"time": "O(digits)", "space": "O(1)"},
+    "gotcha": "Product starts at 1, not 0, and remember to keep the original n before destroying it in the loop."
+  },
+  {
+    "id": "3658-gcd-of-odd-and-even-sums",
+    "patterns": ["Math"],
+    "trigger": "GCD of two closed-form sums, which simplifies algebraically instead of computing.",
+    "key_idea": "The first n odd numbers sum to n^2 and the first n even numbers sum to n(n+1); since gcd(n, n+1) = 1, gcd(n^2, n^2 + n) = n.",
+    "approach": [
+      "Recall sumOdd = n^2 and sumEven = n(n+1).",
+      "Note gcd(n, n+1) = 1.",
+      "Return n."
+    ],
+    "complexity": {"time": "O(1)", "space": "O(1)"},
+    "gotcha": "Computing the sums and calling gcd also works, but recognizing the formula avoids any loop."
+  },
+  {
+    "id": "3693-climbing-stairs-ii",
+    "patterns": ["Dynamic Programming"],
+    "trigger": "Reach step n with jumps of 1, 2, or 3 and additive costs; minimum cost to reach each step depends on the previous three.",
+    "key_idea": "dp[i] = costs[i-1] + min(dp[i-1] + 1, dp[i-2] + 4, dp[i-3] + 9) since jump cost is the square of the jump length.",
+    "approach": [
+      "Set dp[0] = 0.",
+      "For i from 1 to n, start with dp[i-1] + costs[i-1] + 1.",
+      "Take min with dp[i-2] + costs[i-1] + 4 if i >= 2.",
+      "Take min with dp[i-3] + costs[i-1] + 9 if i >= 3.",
+      "Return dp[n]."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(n), or O(1) keeping the last three"},
+    "gotcha": "costs is 1-indexed, so step i uses costs[i-1], and the jump penalty depends on distance, not on the destination alone."
+  },
+  {
+    "id": "3702-longest-subsequence-with-non-zero-bitwise-xor",
+    "patterns": ["Bit Manipulation", "Greedy"],
+    "trigger": "Longest subsequence with a XOR property; removing one element from the full set changes the XOR, so check the whole array first.",
+    "key_idea": "If the XOR of everything is non-zero, take all n; otherwise dropping any one non-zero element makes the XOR non-zero, giving n - 1, unless all elements are 0.",
+    "approach": [
+      "XOR all elements and note whether any element is non-zero.",
+      "If total XOR != 0, return n.",
+      "If all elements are 0, return 0.",
+      "Otherwise return n - 1."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(1)"},
+    "gotcha": "Removing a zero element does not change the XOR, so the n - 1 case requires at least one non-zero element to remove."
+  },
+  {
+    "id": "3718-smallest-missing-multiple-of-k",
+    "patterns": ["Hash Map", "Simulation"],
+    "trigger": "Find the smallest value of a simple arithmetic form that is absent from an array.",
+    "key_idea": "Put nums in a set and test multiples of k in increasing order; the answer is at most k * (n + 1).",
+    "approach": [
+      "Convert nums to a set.",
+      "For i from 1 upward, compute k * i.",
+      "Return the first multiple not in the set."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(n)"},
+    "gotcha": "Since only n values can block multiples, the loop bound n + 1 always suffices; a hardcoded 105 works only because constraints are small."
+  },
+  {
+    "id": "3756-concatenate-non-zero-digits-and-multiply-by-sum-i",
+    "patterns": ["Math", "String"],
+    "trigger": "Filter digits of a number, rebuild a new number, and combine with its digit sum.",
+    "key_idea": "Walk the digits as a string, keeping non-zero ones for both the concatenation and the running sum, then multiply.",
+    "approach": [
+      "Convert n to a string.",
+      "For each non-zero digit, append it to a result string and add to the sum.",
+      "If no digits remain, return 0.",
+      "Return int(result) * sum."
+    ],
+    "complexity": {"time": "O(digits)", "space": "O(digits)"},
+    "gotcha": "If every digit is zero, x = 0 and the answer is 0; guard against int(\"\")."
+  },
+  {
+    "id": "3865-reverse-k-subarrays",
+    "patterns": ["Two Pointers"],
+    "trigger": "Reverse each of several equal-length contiguous blocks in place.",
+    "key_idea": "Compute the block size n / k, then reverse each block with a left and right pointer swapping inward.",
+    "approach": [
+      "Compute block size = n // k.",
+      "For each block i, set l = i * size and r = l + size - 1.",
+      "Swap nums[l] and nums[r], moving pointers inward while l < r.",
+      "Return nums."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(1)"},
+    "gotcha": "The block length is n / k (k blocks), not k; mixing those up reverses the wrong ranges."
+  },
+  {
+    "id": "3875-construct-uniform-parity-array-i",
+    "patterns": ["Math"],
+    "trigger": "Asked whether some construction is always possible; check parity reasoning before coding.",
+    "key_idea": "Any element can be replaced by a difference with another element, and it is always possible to make every entry the same parity, so the answer is always true.",
+    "approach": [
+      "Consider parities: odd - odd and even - even are even, odd - even is odd.",
+      "Argue every index can be made even (or all odd) by choosing j appropriately.",
+      "Return True."
+    ],
+    "complexity": {"time": "O(1)", "space": "O(1)"},
+    "gotcha": "Do not brute force; the trap is spending time on cases when the parity argument shows it is always achievable."
+  },
+  {
+    "id": "3903-smallest-stable-index-i",
+    "patterns": ["Prefix Sum"],
+    "trigger": "Each index needs the prefix maximum and the suffix minimum, so precompute one side and sweep the other.",
+    "key_idea": "Build a suffix-min array right to left, then sweep left to right maintaining a running prefix max and return the first index where prefixMax - suffixMin <= k.",
+    "approach": [
+      "Compute suffix_min[i] = min(nums[i:]) by scanning from the right.",
+      "Sweep left with a running prefix max.",
+      "Return i when prefix max - suffix_min[i] <= k.",
+      "Return -1 if none."
+    ],
+    "complexity": {"time": "O(n)", "space": "O(n)"},
+    "gotcha": "Both ranges include index i itself, so the prefix max must be updated before the comparison and suffix_min[i] includes nums[i]."
+  },
+  {
+    "id": "3982-sum-of-integers-with-maximum-digit-range",
+    "patterns": ["Math", "Simulation"],
+    "trigger": "Compute a per-number digit statistic and sum the numbers that tie for the maximum.",
+    "key_idea": "Compute each number's digit range in one pass; reset the sum when a strictly larger range appears and add to it on ties.",
+    "approach": [
+      "For each number, extract its digits.",
+      "Compute range = max digit - min digit.",
+      "If range beats the best, set best and reset sum to this number.",
+      "If it ties the best, add the number to the sum.",
+      "Return the sum."
+    ],
+    "complexity": {"time": "O(n * digits)", "space": "O(digits)"},
+    "gotcha": "Initialize max range so that single-digit numbers (range 0) still count; starting max_diff at 0 with an elif for ties handles that."
+  }
+]

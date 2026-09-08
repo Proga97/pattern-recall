@@ -1,0 +1,959 @@
+[
+ {
+  "id": "0001-two-sum",
+  "patterns": [
+   "Hash Map"
+  ],
+  "trigger": "Find two elements whose sum equals a target and return their indices in one pass.",
+  "key_idea": "For each number, its needed partner is target minus itself; a hash map of seen values lets you check for that partner in O(1).",
+  "approach": [
+   "Create empty map value to index",
+   "For each nums[i], compute complement = target - nums[i]",
+   "If complement in map, return [map[complement], i]",
+   "Otherwise store nums[i] -> i and continue"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Check for the complement before inserting the current number, or you may pair an element with itself."
+ },
+ {
+  "id": "0002-add-two-numbers",
+  "patterns": [
+   "Linked List",
+   "Math"
+  ],
+  "trigger": "Digits stored in reverse order in two linked lists and you must add them like grade-school addition.",
+  "key_idea": "Walk both lists together, summing digit plus digit plus carry, emitting sum mod 10 and carrying sum div 10; a dummy head avoids special-casing the first node.",
+  "approach": [
+   "Create dummy head and carry = 0",
+   "Loop while l1 or l2 or carry is nonzero",
+   "Take val from each list or 0 if exhausted",
+   "Append node with (sum % 10), set carry = sum // 10",
+   "Advance each list pointer if it exists",
+   "Return dummy.next"
+  ],
+  "complexity": {
+   "time": "O(max(m,n))",
+   "space": "O(max(m,n))"
+  },
+  "gotcha": "Forgetting the final carry (e.g. 5 + 5 = 10) drops the last digit; loop must continue while carry is nonzero."
+ },
+ {
+  "id": "0003-longest-substring-without-repeating-characters",
+  "patterns": [
+   "Sliding Window",
+   "Hash Map"
+  ],
+  "trigger": "Longest contiguous substring satisfying a no-duplicates constraint.",
+  "key_idea": "Grow a window with the right pointer and, on seeing a repeated char, jump the left pointer past that char's last index using a map of char to latest position.",
+  "approach": [
+   "Keep map char -> last index and left = 0",
+   "For each right index, if s[r] seen at index >= left, set left = that index + 1",
+   "Update map[s[r]] = r",
+   "Update best with r - left + 1"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(min(n, alphabet))"
+  },
+  "gotcha": "Only move left forward: a stale last-seen index smaller than left must be ignored, never used to move left backward."
+ },
+ {
+  "id": "0005-longest-palindromic-substring",
+  "patterns": [
+   "Two Pointers",
+   "String"
+  ],
+  "trigger": "Longest palindrome inside a string; palindromes are symmetric around a center.",
+  "key_idea": "Every palindrome has a center (a char or a gap between chars); expand outward from all 2n-1 centers while characters match and keep the longest.",
+  "approach": [
+   "For each index i, treat it as a center",
+   "Expand l=i, r=i for odd-length palindromes while s[l]==s[r]",
+   "Expand l=i, r=i+1 for even-length palindromes",
+   "Track the longest span found",
+   "Return that substring"
+  ],
+  "complexity": {
+   "time": "O(n^2)",
+   "space": "O(1)"
+  },
+  "gotcha": "Forgetting the even-length center (between two chars) misses answers like 'bb'."
+ },
+ {
+  "id": "0006-add-two-numbers",
+  "patterns": [
+   "Linked List",
+   "Math"
+  ],
+  "trigger": "Digits stored in reverse order in two linked lists and you must add them like grade-school addition.",
+  "key_idea": "Walk both lists together, summing digit plus digit plus carry, emitting sum mod 10 and carrying sum div 10; a dummy head avoids special-casing the first node.",
+  "approach": [
+   "Create dummy head and carry = 0",
+   "Loop while l1 or l2 or carry is nonzero",
+   "Take val from each list or 0 if exhausted",
+   "Append node with (sum % 10), set carry = sum // 10",
+   "Advance each list pointer if it exists",
+   "Return dummy.next"
+  ],
+  "complexity": {
+   "time": "O(max(m,n))",
+   "space": "O(max(m,n))"
+  },
+  "gotcha": "Forgetting the final carry (e.g. 5 + 5 = 10) drops the last digit; loop must continue while carry is nonzero."
+ },
+ {
+  "id": "0006-zigzag-conversion",
+  "patterns": [
+   "Simulation",
+   "String"
+  ],
+  "trigger": "Characters are placed in a visual up-and-down pattern across rows and read back row by row.",
+  "key_idea": "You only need which row each char lands in, not the columns: walk a row index down then up, appending each char to its row's bucket, then concatenate rows.",
+  "approach": [
+   "If numRows == 1 return s",
+   "Keep one string bucket per row and a direction flag",
+   "For each char, append to current row",
+   "Flip direction at row 0 and row numRows-1, then step",
+   "Join the row buckets in order"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "numRows == 1 causes an infinite bounce or division by zero if not special-cased; the learner's matrix build is a heavier variant of the row-bucket idea."
+ },
+ {
+  "id": "0007-reverse-integer",
+  "patterns": [
+   "Math"
+  ],
+  "trigger": "Reverse the digits of a signed integer while respecting a 32-bit overflow limit.",
+  "key_idea": "Peel digits with mod 10 and rebuild with rev*10 + digit, checking before each multiply whether rev would exceed 2^31 - 1 (or fall below -2^31).",
+  "approach": [
+   "Record sign and work with abs(x)",
+   "Loop: digit = x % 10, x //= 10",
+   "Before rev = rev*10 + digit, check rev > (2^31-1)//10",
+   "Return 0 on overflow, else sign * rev"
+  ],
+  "complexity": {
+   "time": "O(log x)",
+   "space": "O(1)"
+  },
+  "gotcha": "The overflow check must happen before the multiply since the problem forbids 64-bit storage; also drop leading zeros from the reversed result like 1200 -> 21."
+ },
+ {
+  "id": "0011-container-with-most-water",
+  "patterns": [
+   "Two Pointers",
+   "Greedy"
+  ],
+  "trigger": "Choose two lines to maximize width times the shorter height.",
+  "key_idea": "Start with the widest pair; moving the taller side can never help since the shorter one caps the area, so always move the shorter pointer inward.",
+  "approach": [
+   "Set l = 0, r = n-1, best = 0",
+   "Compute area = (r-l) * min(height[l], height[r])",
+   "Update best",
+   "Move whichever pointer has the smaller height",
+   "Stop when l meets r"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Moving the taller pointer is the classic wrong move; the shorter side is the bottleneck."
+ },
+ {
+  "id": "0015-3sum",
+  "patterns": [
+   "Two Pointers",
+   "Sorting"
+  ],
+  "trigger": "Find all unique triplets summing to zero with no duplicate triplets in the output.",
+  "key_idea": "Sort, fix the first element, then run two pointers on the remainder for a two-sum; sorting makes skipping duplicates a matter of comparing neighbors.",
+  "approach": [
+   "Sort nums",
+   "For each i, break if nums[i] > 0; skip if same as nums[i-1]",
+   "Set l = i+1, r = n-1",
+   "If sum == 0 record, then advance both skipping duplicate values",
+   "If sum < 0 move l right, else move r left"
+  ],
+  "complexity": {
+   "time": "O(n^2)",
+   "space": "O(1) extra (excluding output)"
+  },
+  "gotcha": "Duplicates must be skipped at both the i level and the l/r level after a match, otherwise repeated triplets appear."
+ },
+ {
+  "id": "0018-4sum",
+  "patterns": [
+   "Two Pointers",
+   "Sorting"
+  ],
+  "trigger": "Unique quadruplets summing to a target; a generalization of 3Sum with one more fixed index.",
+  "key_idea": "Sort, fix two indices with nested loops (skipping duplicates), then two-pointer the rest for the remaining two-sum.",
+  "approach": [
+   "Sort nums",
+   "Loop i, skip duplicates of nums[i-1]",
+   "Loop j > i, skip duplicates of nums[j-1] when j > i+1",
+   "Two pointers l = j+1, r = n-1 toward target",
+   "On match record and skip duplicate values on both sides"
+  ],
+  "complexity": {
+   "time": "O(n^3)",
+   "space": "O(1) extra (excluding output)"
+  },
+  "gotcha": "Skip j duplicates only when j > i+1, otherwise you wrongly skip a valid nums[i] == nums[j] pair."
+ },
+ {
+  "id": "0019-remove-nth-node-from-end-of-list",
+  "patterns": [
+   "Two Pointers",
+   "Linked List"
+  ],
+  "trigger": "Remove a node counted from the END of a singly linked list in one pass.",
+  "key_idea": "Advance a fast pointer n steps ahead, then move fast and slow together; when fast reaches the end, slow sits right before the node to delete.",
+  "approach": [
+   "Create dummy pointing to head; slow = dummy, fast = head",
+   "Move fast forward n steps",
+   "Move both until fast is None",
+   "Set slow.next = slow.next.next",
+   "Return dummy.next"
+  ],
+  "complexity": {
+   "time": "O(L)",
+   "space": "O(1)"
+  },
+  "gotcha": "Removing the head (n equals list length) breaks without a dummy node in front of the list."
+ },
+ {
+  "id": "0020-valid-parentheses",
+  "patterns": [
+   "Stack"
+  ],
+  "trigger": "Matching nested opening and closing brackets in correct order.",
+  "key_idea": "Brackets close in last-opened-first-closed order, which is exactly a stack; each closer must match the top of the stack.",
+  "approach": [
+   "Map each closer to its opener",
+   "Push openers onto a stack",
+   "On a closer, check stack nonempty and top matches, then pop",
+   "Otherwise return False",
+   "Return True only if stack is empty at end"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "A leftover stack at the end means unclosed openers, so return len(stack) == 0, not just True."
+ },
+ {
+  "id": "0021-merge-two-sorted-lists",
+  "patterns": [
+   "Linked List",
+   "Two Pointers"
+  ],
+  "trigger": "Combine two already-sorted linked lists into one sorted list by splicing nodes.",
+  "key_idea": "Repeatedly attach the smaller head to a tail pointer, like the merge step of merge sort; a dummy head keeps the code uniform.",
+  "approach": [
+   "Create dummy node and tail pointer",
+   "While both lists nonempty, attach the smaller node and advance that list",
+   "Advance tail",
+   "Attach whatever list remains",
+   "Return dummy.next"
+  ],
+  "complexity": {
+   "time": "O(m+n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Forgetting to append the leftover tail of the longer list drops its remaining nodes."
+ },
+ {
+  "id": "0023-merge-k-sorted-lists",
+  "patterns": [
+   "K-way Merge",
+   "Heap / Priority Queue",
+   "Linked List"
+  ],
+  "trigger": "Merge k sorted sequences into one sorted output.",
+  "key_idea": "Keep one candidate per list in a min-heap so the next smallest element is always at the top; pop, append it, and push that list's next node.",
+  "approach": [
+   "Push (val, list index, node) for each nonempty list head",
+   "Pop the min, append node to result tail",
+   "Push popped node's next if it exists",
+   "Repeat until heap empty",
+   "Return dummy.next"
+  ],
+  "complexity": {
+   "time": "O(N log k)",
+   "space": "O(k)"
+  },
+  "gotcha": "The learner's code pushes every value into the heap (O(N log N) and rebuilds nodes); the optimal heap holds only k entries, and ties need an index tiebreaker since ListNodes are not comparable."
+ },
+ {
+  "id": "0024-swap-nodes-in-pairs",
+  "patterns": [
+   "Linked List"
+  ],
+  "trigger": "Rearrange adjacent nodes of a linked list without changing values.",
+  "key_idea": "For each pair, rewire three pointers: prev -> second, second -> first, first -> next pair; a dummy node makes prev exist for the first pair.",
+  "approach": [
+   "Create dummy pointing to head; prev = dummy",
+   "While prev.next and prev.next.next exist, name first and second",
+   "Set first.next = second.next, second.next = first, prev.next = second",
+   "Advance prev = first",
+   "Return dummy.next"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Save second.next before rewiring or the rest of the list is lost; odd-length lists leave the last node in place."
+ },
+ {
+  "id": "0025-reverse-nodes-in-k-group",
+  "patterns": [
+   "Linked List"
+  ],
+  "trigger": "Reverse consecutive blocks of k nodes, leaving a short trailing block untouched.",
+  "key_idea": "For each group, first confirm a k-th node exists, then reverse exactly that group in place and reconnect the previous group's tail to the new head.",
+  "approach": [
+   "Create dummy; prevGroup = dummy",
+   "Find kth node from prevGroup; stop if missing",
+   "Set nextGroup = kth.next",
+   "Reverse nodes from prevGroup.next up to nextGroup, with prev starting as nextGroup",
+   "Link prevGroup.next to kth, set prevGroup to old group head"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Starting the reversal's prev at nextGroup (not None) automatically links the reversed block to the rest of the list."
+ },
+ {
+  "id": "0028-find-the-index-of-the-first-occurrence-in-a-string",
+  "patterns": [
+   "String",
+   "Sliding Window"
+  ],
+  "trigger": "Locate the first occurrence of a pattern string inside a text string.",
+  "key_idea": "Slide a window of length len(needle) over haystack and compare each slice; KMP does the same in linear time but brute force is acceptable here.",
+  "approach": [
+   "For i from 0 to len(haystack) - len(needle)",
+   "Compare haystack[i:i+len(needle)] with needle",
+   "Return i on the first match",
+   "Return -1 if none"
+  ],
+  "complexity": {
+   "time": "O(n*m)",
+   "space": "O(1)"
+  },
+  "gotcha": "The loop bound must be len(haystack) - len(needle) + 1 or you miss a match ending at the last char."
+ },
+ {
+  "id": "0030-substring-with-concatenation-of-all-words",
+  "patterns": [
+   "Sliding Window",
+   "Hash Map"
+  ],
+  "trigger": "Find substrings that are a permutation of a fixed set of equal-length words concatenated.",
+  "key_idea": "Because all words have the same length, chop each candidate window into word-sized chunks and compare chunk counts to the required Counter, bailing early on any invalid or over-counted chunk.",
+  "approach": [
+   "Build Counter of words; wlen, total = len(words) * wlen",
+   "For each start i up to len(s) - total",
+   "Scan chunks of wlen from i, counting into a seen map",
+   "Break if chunk unknown or count exceeds required",
+   "Record i when seen equals required Counter"
+  ],
+  "complexity": {
+   "time": "O(n * k * wlen)",
+   "space": "O(k)"
+  },
+  "gotcha": "Words can repeat, so you need counts not a set; the optimal version slides per offset mod wlen to avoid restarting each window."
+ },
+ {
+  "id": "0033-search-in-rotated-sorted-array",
+  "patterns": [
+   "Binary Search"
+  ],
+  "trigger": "Sorted array that was rotated, and an O(log n) requirement.",
+  "key_idea": "At any mid, at least one half is properly sorted; check whether target lies within that sorted half and discard the other.",
+  "approach": [
+   "Binary search with low, high",
+   "If nums[mid] == target return mid",
+   "If nums[low] <= nums[mid], left half is sorted",
+   "If target in [nums[low], nums[mid]) go left, else go right",
+   "Otherwise right half is sorted; mirror the check"
+  ],
+  "complexity": {
+   "time": "O(log n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Use >= when testing nums[mid] >= nums[low] so a two-element array counts the single-element left half as sorted."
+ },
+ {
+  "id": "0036-valid-sudoku",
+  "patterns": [
+   "Hash Map",
+   "Matrix"
+  ],
+  "trigger": "Check no repeated digit within each row, column, and 3x3 box of a grid.",
+  "key_idea": "Keep a set per row, per column, and per box keyed by (r//3, c//3); a digit is invalid if already present in any of the three.",
+  "approach": [
+   "Create defaultdict(set) for rows, cols, boxes",
+   "Iterate every filled cell",
+   "If digit in rows[r], cols[c], or boxes[(r//3, c//3)] return False",
+   "Add digit to all three sets",
+   "Return True"
+  ],
+  "complexity": {
+   "time": "O(81)",
+   "space": "O(81)"
+  },
+  "gotcha": "Box identity is integer division (r//3, c//3), not r%3; skip '.' cells so they are never treated as digits."
+ },
+ {
+  "id": "0037-sudoku-solver",
+  "patterns": [
+   "Backtracking"
+  ],
+  "trigger": "Fill a grid so that every placement satisfies constraints, with undo when a branch fails.",
+  "key_idea": "Try digits 1-9 in each empty cell, recurse on the next cell, and undo the placement if the recursion fails; row, col, and box sets make validity checks O(1).",
+  "approach": [
+   "Precompute row, col, box sets and list of empty cells",
+   "Recurse on empty cell index; index == len means solved",
+   "For each digit 1-9 that is valid, place it and add to sets",
+   "If recursion succeeds return True",
+   "Otherwise remove digit from sets and board, try next"
+  ],
+  "complexity": {
+   "time": "O(9^m) worst, m = empty cells",
+   "space": "O(m)"
+  },
+  "gotcha": "Forgetting to undo the sets when backtracking poisons later branches; also digits are strings on this board, not ints."
+ },
+ {
+  "id": "0039-combination-sum",
+  "patterns": [
+   "Backtracking"
+  ],
+  "trigger": "Enumerate all combinations that reach a target where elements may be reused unlimited times.",
+  "key_idea": "DFS with a start index so combinations are built in nondecreasing candidate order (no duplicates), and recurse on the same index to allow reuse.",
+  "approach": [
+   "dfs(i, path, total): if total == target record copy of path",
+   "For j from i to end, skip if total + candidates[j] > target",
+   "Append candidates[j], recurse dfs(j, ...) allowing reuse",
+   "Pop to backtrack"
+  ],
+  "complexity": {
+   "time": "O(k * 2^target) roughly exponential",
+   "space": "O(target / min candidate) recursion depth"
+  },
+  "gotcha": "Recurse with j (not j+1) to allow reuse, and never go back to earlier indices or you produce permutations of the same combination."
+ },
+ {
+  "id": "0045-jump-game-ii",
+  "patterns": [
+   "Greedy"
+  ],
+  "trigger": "Minimum number of jumps to reach the end when each index gives a max jump length.",
+  "key_idea": "Treat each jump as a BFS level: track the farthest reach from the current level and, when you exhaust the level's end, take one jump and extend the end to that farthest reach.",
+  "approach": [
+   "Set curr_end = curr_far = jumps = 0",
+   "For i in range(n-1), update curr_far = max(curr_far, i + nums[i])",
+   "If i == curr_end, increment jumps and set curr_end = curr_far",
+   "Return jumps"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Loop only to n-2 (range(n-1)); including the last index would count an extra jump you never take."
+ },
+ {
+  "id": "0048-rotate-image",
+  "patterns": [
+   "Matrix"
+  ],
+  "trigger": "Rotate an n x n matrix 90 degrees in place without extra matrix.",
+  "key_idea": "Either transpose then reverse each row, or rotate four cells at a time layer by layer using one temp variable.",
+  "approach": [
+   "Transpose: swap matrix[i][j] with matrix[j][i] for j > i",
+   "Reverse each row",
+   "Alternatively, for each layer l..r, cycle four cells top-left <- bottom-left <- bottom-right <- top-right"
+  ],
+  "complexity": {
+   "time": "O(n^2)",
+   "space": "O(1)"
+  },
+  "gotcha": "Transpose then reverse rows gives clockwise; reversing columns instead gives counterclockwise, and in the layer method the offset i runs only r - l times."
+ },
+ {
+  "id": "0049-group-anagrams",
+  "patterns": [
+   "Hash Map",
+   "String"
+  ],
+  "trigger": "Group strings that are rearrangements of each other.",
+  "key_idea": "Anagrams share a canonical key; use a 26-letter count tuple (or sorted string) as the dictionary key and append words to that bucket.",
+  "approach": [
+   "Create defaultdict(list)",
+   "For each word, build a 26-length count array",
+   "Use tuple(count) as key and append word",
+   "Return the dict values"
+  ],
+  "complexity": {
+   "time": "O(n * k)",
+   "space": "O(n * k)"
+  },
+  "gotcha": "Lists are unhashable; convert the count array to a tuple before using it as a key."
+ },
+ {
+  "id": "0055-jump-game",
+  "patterns": [
+   "Greedy"
+  ],
+  "trigger": "Can you reach the last index given max jump lengths; asks feasibility, not count.",
+  "key_idea": "Scan from the right keeping the leftmost index known to reach the end; an index i is good if i + nums[i] reaches that goal, and the answer is whether the goal becomes 0.",
+  "approach": [
+   "Set goal = n-1",
+   "For i from n-1 down to 0, if i + nums[i] >= goal set goal = i",
+   "Return goal == 0"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "A zero at some index is only a trap if nothing before it can jump past it; the memoized DFS the learner commented out is O(n^2) and can TLE."
+ },
+ {
+  "id": "0056-merge-intervals",
+  "patterns": [
+   "Intervals",
+   "Sorting"
+  ],
+  "trigger": "Combine overlapping ranges into disjoint ranges.",
+  "key_idea": "After sorting by start, an interval overlaps only with the last merged one, so either extend that end or start a new interval.",
+  "approach": [
+   "Sort intervals by start",
+   "Push the first interval to result",
+   "For each next interval, if start <= last end, extend last end with max",
+   "Else append it",
+   "Return result"
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Use max when extending the end; a later interval can be fully contained and have a smaller end."
+ },
+ {
+  "id": "0057-insert-interval",
+  "patterns": [
+   "Intervals"
+  ],
+  "trigger": "Insert one interval into an already sorted, non-overlapping list and keep it merged.",
+  "key_idea": "Three phases: copy intervals ending before the new one, merge all intervals that overlap it by min start and max end, then copy the rest.",
+  "approach": [
+   "Append intervals whose end < newInterval start",
+   "While intervals start <= newInterval end, absorb by min start and max end",
+   "Append the merged newInterval",
+   "Append remaining intervals"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Overlap includes touching endpoints (shares a point), so use <= and >= in the comparisons."
+ },
+ {
+  "id": "0064-minimum-path-sum",
+  "patterns": [
+   "Dynamic Programming",
+   "Matrix"
+  ],
+  "trigger": "Minimum cost path in a grid moving only right or down.",
+  "key_idea": "The cheapest way to reach a cell is its value plus the cheaper of the cell above or the cell to the left; memoize by (row, col).",
+  "approach": [
+   "Define dp[r][c] = grid[r][c] + min(dp[r-1][c], dp[r][c-1])",
+   "Initialize first row and column as running sums",
+   "Fill row by row",
+   "Return dp[m-1][n-1]"
+  ],
+  "complexity": {
+   "time": "O(m*n)",
+   "space": "O(m*n) or O(n) rolling row"
+  },
+  "gotcha": "Out-of-bounds neighbors must contribute infinity (not 0); the learner's top-down DFS can hit recursion limits on large grids so bottom-up is safer."
+ },
+ {
+  "id": "0069-sqrtx",
+  "patterns": [
+   "Binary Search",
+   "Math"
+  ],
+  "trigger": "Find the largest integer whose square does not exceed x without using pow.",
+  "key_idea": "mid*mid is monotonic in mid, so binary search on the answer range and keep the last mid whose square is <= x.",
+  "approach": [
+   "Set low = 1, high = x//2 + 1",
+   "While low <= high, mid = (low+high)//2",
+   "If mid*mid > x, high = mid-1; if less, low = mid+1; else return mid",
+   "Return high"
+  ],
+  "complexity": {
+   "time": "O(log x)",
+   "space": "O(1)"
+  },
+  "gotcha": "When the loop ends, high (not low) is the floor; also handle x = 0 and x = 1 where high starts at 1."
+ },
+ {
+  "id": "0070-climbing-stairs",
+  "patterns": [
+   "Dynamic Programming"
+  ],
+  "trigger": "Count the ways to reach step n taking 1 or 2 steps at a time.",
+  "key_idea": "Ways to reach step n equals ways to reach n-1 plus ways to reach n-2, which is Fibonacci; only two previous values need storing.",
+  "approach": [
+   "If n <= 1 return 1",
+   "Keep a = ways(1) = 1, b = ways(2) = 2",
+   "For i from 3 to n, set a, b = b, a + b",
+   "Return b"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Naive recursion is exponential; also base cases are ways(1)=1 and ways(2)=2, not 0 and 1."
+ },
+ {
+  "id": "0071-simplify-path",
+  "patterns": [
+   "Stack",
+   "String"
+  ],
+  "trigger": "Canonicalize a Unix path handling '.', '..', and repeated slashes.",
+  "key_idea": "Split on '/' and use a stack of directory names: '..' pops, '.' and empty tokens are ignored, anything else is pushed.",
+  "approach": [
+   "Split path by '/'",
+   "For each token: if '..' pop if stack nonempty",
+   "Skip '' and '.'",
+   "Push any other token",
+   "Return '/' + '/'.join(stack)"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "'...' is a valid directory name and must be pushed; '..' at root must not pop from an empty stack."
+ },
+ {
+  "id": "0076-minimum-window-substring",
+  "patterns": [
+   "Sliding Window",
+   "Hash Map"
+  ],
+  "trigger": "Smallest substring of s that contains all characters of t including duplicates.",
+  "key_idea": "Expand right until the window satisfies t, then shrink left while it still satisfies; track a 'formed' count of characters meeting their required frequency to test satisfaction in O(1).",
+  "approach": [
+   "Build need = Counter(t), required = number of distinct chars",
+   "Expand r, update window counts, increment formed when a char hits its need",
+   "While formed == required, record window if smaller",
+   "Shrink l, decrement counts, decrement formed if below need",
+   "Return best window"
+  ],
+  "complexity": {
+   "time": "O(m+n)",
+   "space": "O(alphabet)"
+  },
+  "gotcha": "Increment formed only when count == need exactly once, and decrement only when it drops below need, otherwise the counter drifts."
+ },
+ {
+  "id": "0079-word-search",
+  "patterns": [
+   "Backtracking",
+   "DFS",
+   "Matrix"
+  ],
+  "trigger": "Find a word by walking adjacent grid cells without reusing a cell.",
+  "key_idea": "DFS from every cell matching word[0], marking visited cells in place and restoring them on return so other paths can reuse them.",
+  "approach": [
+   "For each cell, start dfs(i, j, 0)",
+   "In dfs: return True if index == len(word)",
+   "Return False if out of bounds or char mismatch",
+   "Mark cell with '#', recurse into 4 neighbors with index + 1",
+   "Restore the cell and return the result"
+  ],
+  "complexity": {
+   "time": "O(m*n*4^L)",
+   "space": "O(L)"
+  },
+  "gotcha": "Restore board[i][j] after exploring (backtrack); the learner's code returns True before restoring, which is fine only because the search stops there."
+ },
+ {
+  "id": "0083-remove-duplicates-from-sorted-list",
+  "patterns": [
+   "Linked List"
+  ],
+  "trigger": "Sorted linked list where equal values are adjacent and you must keep only one of each.",
+  "key_idea": "Since duplicates are adjacent, compare each node with its next and skip over nodes with the same value by rewiring next.",
+  "approach": [
+   "curr = head",
+   "While curr and curr.next exist",
+   "If curr.val == curr.next.val, set curr.next = curr.next.next",
+   "Else advance curr",
+   "Return head"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Do not advance curr after deleting; there may be a third duplicate right behind."
+ },
+ {
+  "id": "0084-largest-rectangle-in-histogram",
+  "patterns": [
+   "Monotonic Stack"
+  ],
+  "trigger": "Largest rectangle under bars; each bar's rectangle extends until a shorter bar on each side.",
+  "key_idea": "Keep a stack of increasing heights with their start indices; when a shorter bar arrives, pop taller bars and compute their area using current index as the right boundary, and the popped bar's start as the new bar's start.",
+  "approach": [
+   "Iterate bars with a stack of (start index, height)",
+   "While top height > current, pop and compute height * (i - start)",
+   "Remember the last popped start as current bar's start",
+   "Push (start, current height)",
+   "Flush the stack at the end using n as right boundary"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Forgetting to drain the stack after the loop misses rectangles that extend to the right edge."
+ },
+ {
+  "id": "0092-reverse-linked-list-ii",
+  "patterns": [
+   "Linked List"
+  ],
+  "trigger": "Reverse only a middle segment of a linked list between positions left and right.",
+  "key_idea": "Walk to the node before left, reverse exactly right-left+1 nodes with the standard prev/curr loop, then stitch: pre-segment node -> new head, old segment head -> node after segment.",
+  "approach": [
+   "Advance curr left-1 times, remembering prev as the pre-segment node",
+   "Save segment head = curr",
+   "Reverse right-left+1 nodes using prev/curr/temp",
+   "Connect pre-segment.next = prev (or head = prev if none)",
+   "Connect segment head.next = curr"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "When left == 1 there is no pre-segment node, so the new head is prev; a dummy node avoids this branch."
+ },
+ {
+  "id": "0094-binary-tree-inorder-traversal",
+  "patterns": [
+   "Tree Traversal",
+   "DFS"
+  ],
+  "trigger": "Visit binary tree nodes in left, root, right order.",
+  "key_idea": "Inorder is recursive: fully process the left subtree, record the node, then the right subtree; an explicit stack gives the same order iteratively.",
+  "approach": [
+   "Define dfs(node): return if None",
+   "dfs(node.left)",
+   "Append node.val",
+   "dfs(node.right)",
+   "Return the result list"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(h)"
+  },
+  "gotcha": "For a BST, inorder yields sorted order; the iterative version must push all left children before popping."
+ },
+ {
+  "id": "0095-unique-binary-search-trees-ii",
+  "patterns": [
+   "Recursion",
+   "Divide & Conquer",
+   "Binary Search Tree"
+  ],
+  "trigger": "Generate every structurally unique BST for values 1..n.",
+  "key_idea": "Pick each value as root; all BSTs on the left range and right range combine independently, so the answer is the cartesian product of the two recursive lists.",
+  "approach": [
+   "generate(lo, hi): return [None] if lo > hi",
+   "For each root in lo..hi, get leftTrees = generate(lo, root-1)",
+   "Get rightTrees = generate(root+1, hi)",
+   "Create a TreeNode for every (left, right) pair",
+   "Memoize by (lo, hi) and return the list"
+  ],
+  "complexity": {
+   "time": "O(Catalan(n) * n)",
+   "space": "O(Catalan(n) * n)"
+  },
+  "gotcha": "Return [None] not [] for an empty range, otherwise the nested loop produces zero trees."
+ },
+ {
+  "id": "0096-find-if-path-exists-in-graph",
+  "patterns": [
+   "Graph",
+   "DFS",
+   "Union-Find"
+  ],
+  "trigger": "Is there any route between two vertices in an undirected graph given as an edge list.",
+  "key_idea": "Build an adjacency list and explore from source with DFS/BFS using a visited set; reaching destination means a path exists.",
+  "approach": [
+   "Build adjacency list adding both directions",
+   "Push source onto a stack, keep visited set",
+   "Pop node; return True if it is destination",
+   "Add unvisited neighbors to the stack",
+   "Return False when the stack empties"
+  ],
+  "complexity": {
+   "time": "O(V+E)",
+   "space": "O(V+E)"
+  },
+  "gotcha": "Add edges in both directions since the graph is bidirectional; source == destination should return True immediately."
+ },
+ {
+  "id": "0096-unique-binary-search-trees",
+  "patterns": [
+   "Dynamic Programming",
+   "Math"
+  ],
+  "trigger": "Count structurally unique BSTs on n nodes; only counts, not the trees themselves.",
+  "key_idea": "With root i, the left subtree has i-1 nodes and the right has n-i, so count(n) = sum over i of count(i-1) * count(n-i), the Catalan recurrence.",
+  "approach": [
+   "dp[0] = dp[1] = 1",
+   "For nodes from 2 to n, sum dp[left] * dp[right] over every root choice",
+   "Store in dp[nodes]",
+   "Return dp[n]"
+  ],
+  "complexity": {
+   "time": "O(n^2)",
+   "space": "O(n)"
+  },
+  "gotcha": "Only sizes matter, not actual values, so dp[0] must be 1 (the empty subtree counts as one way)."
+ },
+ {
+  "id": "0098-validate-binary-search-tree",
+  "patterns": [
+   "DFS",
+   "Binary Search Tree"
+  ],
+  "trigger": "Check BST validity where every node in the left subtree must be less than the ancestor, not just the parent.",
+  "key_idea": "Pass an allowed (lower, upper) range down the recursion: going left tightens upper to node.val, going right tightens lower to node.val.",
+  "approach": [
+   "valid(node, lower, upper): return True if None",
+   "Return False unless lower < node.val < upper",
+   "Recurse left with (lower, node.val)",
+   "Recurse right with (node.val, upper)",
+   "Start with (-inf, +inf)"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(h)"
+  },
+  "gotcha": "Comparing only with the immediate parent misses violations deeper down; the bounds must be strict since equal values are invalid."
+ },
+ {
+  "id": "0100-same-tree",
+  "patterns": [
+   "Recursion",
+   "Tree Traversal"
+  ],
+  "trigger": "Compare two binary trees for identical structure and values.",
+  "key_idea": "Two trees are the same if both are empty, or both nonempty with equal values and recursively same left and right subtrees.",
+  "approach": [
+   "If both None return True",
+   "If exactly one None return False",
+   "If values differ return False",
+   "Return same(p.left, q.left) and same(p.right, q.right)"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(h)"
+  },
+  "gotcha": "Check the both-None case before accessing .val; the learner's threading variant adds overhead without changing complexity."
+ },
+ {
+  "id": "0101-symmetric-tree",
+  "patterns": [
+   "Recursion",
+   "Tree Traversal"
+  ],
+  "trigger": "Check if a tree is a mirror of itself around the root.",
+  "key_idea": "Compare two subtrees as mirrors: values equal, and left.left mirrors right.right while left.right mirrors right.left.",
+  "approach": [
+   "Define mirror(a, b): True if both None, False if one None",
+   "Return False if a.val != b.val",
+   "Return mirror(a.left, b.right) and mirror(a.right, b.left)",
+   "Call mirror(root.left, root.right)"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(h)"
+  },
+  "gotcha": "Comparing left with left (same-tree style) is wrong; the inner children must be compared crosswise."
+ },
+ {
+  "id": "0102-binary-tree-level-order-traversal",
+  "patterns": [
+   "BFS",
+   "Tree Traversal"
+  ],
+  "trigger": "Return node values grouped level by level from a tree.",
+  "key_idea": "BFS with a queue, processing all nodes currently in the queue as one level before their children are handled.",
+  "approach": [
+   "If root is None return []",
+   "Put root in a deque",
+   "While queue nonempty, snapshot its length as the level size",
+   "Pop that many nodes, record values, push their children",
+   "Append the level list to result"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(w) max width"
+  },
+  "gotcha": "Capturing the level size before popping is what separates levels; the learner's approach queues whole level lists instead, which also works."
+ },
+ {
+  "id": "0103-binary-tree-zigzag-level-order-traversal",
+  "patterns": [
+   "BFS",
+   "Tree Traversal"
+  ],
+  "trigger": "Level order traversal where alternating levels are read right to left.",
+  "key_idea": "Do a normal level-order BFS and reverse every other level's value list with a toggling flag.",
+  "approach": [
+   "BFS level by level as in level order",
+   "Collect values for the level",
+   "If zig flag is set, reverse the level list",
+   "Flip the flag after each level"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(w) max width"
+  },
+  "gotcha": "Reverse only the output values, not the child insertion order, or the next level's ordering breaks."
+ },
+ {
+  "id": "0104-maximum-depth-of-binary-tree",
+  "patterns": [
+   "Recursion",
+   "DFS"
+  ],
+  "trigger": "Number of nodes on the longest root-to-leaf path.",
+  "key_idea": "Depth of a tree is 1 plus the larger depth of its two subtrees, with an empty tree having depth 0.",
+  "approach": [
+   "If root is None return 0",
+   "Compute left = maxDepth(root.left)",
+   "Compute right = maxDepth(root.right)",
+   "Return 1 + max(left, right)"
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(h)"
+  },
+  "gotcha": "Depth counts nodes not edges, so a single node has depth 1; iterative BFS/stack is safer for very deep skewed trees."
+ }
+]

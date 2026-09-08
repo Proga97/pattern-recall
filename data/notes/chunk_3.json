@@ -1,0 +1,984 @@
+[
+  {
+    "id": "0581-shortest-unsorted-continuous-subarray",
+    "patterns": [
+      "Two Pointers",
+      "Sorting"
+    ],
+    "trigger": "Asked for the shortest window that, if sorted, makes the whole array sorted.",
+    "key_idea": "Find the first dip from the left and first rise from the right, then expand outward until every element outside the window is compatible with the window's min and max.",
+    "approach": [
+      "Move low right while nums[low] <= nums[low+1]; return 0 if it reaches the end",
+      "Move high left while nums[high] >= nums[high-1]",
+      "Compute min and max of nums[low..high]",
+      "Expand low left while nums[low-1] > window min",
+      "Expand high right while nums[high+1] < window max",
+      "Return high - low + 1"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)"
+    },
+    "gotcha": "Forgetting the expansion step: elements outside the initial dip may still be larger than the window's min, e.g. [1,3,2,2,2]."
+  },
+  {
+    "id": "0617-merge-two-binary-trees",
+    "patterns": [
+      "Recursion",
+      "Tree Traversal"
+    ],
+    "trigger": "Two trees must be overlaid node by node, combining values where both exist.",
+    "key_idea": "Recurse on both trees in lockstep; if one side is null just return the other subtree, otherwise build a node with the summed value.",
+    "approach": [
+      "If root1 is None return root2; if root2 is None return root1",
+      "Create node with root1.val + root2.val",
+      "Set node.left = merge(root1.left, root2.left)",
+      "Set node.right = merge(root1.right, root2.right)",
+      "Return node"
+    ],
+    "complexity": {
+      "time": "O(min(n, m))",
+      "space": "O(min(h1, h2)) recursion depth"
+    },
+    "gotcha": "Recursing into a null node's children raises an error; the base case must return the non-null subtree immediately."
+  },
+  {
+    "id": "0621-rearrange-string-k-distance-apart",
+    "patterns": [
+      "Heap / Priority Queue",
+      "Queue / Deque",
+      "Greedy"
+    ],
+    "trigger": "Rearrange characters so identical ones are at least k positions apart.",
+    "key_idea": "Always place the most frequent available character, then park it in a cooldown queue of size k so it cannot be reused until k other placements happen.",
+    "approach": [
+      "Count characters; push (-count, char) into a max-heap",
+      "Pop the most frequent char, append it to the result",
+      "Push (remaining count, char) onto a deque",
+      "When deque reaches size k, pop its front and re-push to heap if count > 0",
+      "Return result if its length equals len(s), else empty string"
+    ],
+    "complexity": {
+      "time": "O(n log 26) = O(n)",
+      "space": "O(26) = O(1)"
+    },
+    "gotcha": "k == 0 means no constraint and must return s directly; also the result is invalid if the heap empties before all characters are placed."
+  },
+  {
+    "id": "0621-task-scheduler",
+    "patterns": [
+      "Heap / Priority Queue",
+      "Greedy",
+      "Math"
+    ],
+    "trigger": "Same tasks need a cooldown of n intervals between them and you want minimum total time.",
+    "key_idea": "Greedily schedule the most frequent remaining tasks in each cycle of n+1 slots; leftover slots become idle. The closed form is max(len(tasks), (maxFreq-1)*(n+1) + countOfMaxFreq).",
+    "approach": [
+      "Count task frequencies; push (-count, task) into a max-heap",
+      "Repeat while heap non-empty: run a cycle of n+1 slots",
+      "In each slot pop the most frequent task, decrement, stash it if count remains",
+      "If heap empty but stashed tasks remain, count an idle slot",
+      "After the cycle push stashed tasks back",
+      "Return total slots used"
+    ],
+    "complexity": {
+      "time": "O(n * 26)",
+      "space": "O(26)"
+    },
+    "gotcha": "Idle slots must not be counted after the last real task finishes; the learner's code only adds '#' when tasks are still pending."
+  },
+  {
+    "id": "0628-maximum-product-of-three-numbers",
+    "patterns": [
+      "Sorting",
+      "Math"
+    ],
+    "trigger": "Maximum product of three numbers from an array that may contain negatives.",
+    "key_idea": "The answer is either the three largest numbers or the two most negative numbers times the largest, because two negatives multiply to a positive.",
+    "approach": [
+      "Sort the array",
+      "Compute product of the last three elements",
+      "Compute product of first two elements and the last element",
+      "Return the max of the two"
+    ],
+    "complexity": {
+      "time": "O(n log n)",
+      "space": "O(1) extra (or O(n) for O(n) min/max tracking)"
+    },
+    "gotcha": "Forgetting the two-smallest-negatives case, e.g. [-10,-10,1,3,2] has answer 300 not 6."
+  },
+  {
+    "id": "0632-smallest-range-covering-elements-from-k-lists",
+    "patterns": [
+      "K-way Merge",
+      "Heap / Priority Queue"
+    ],
+    "trigger": "Find the smallest range that touches at least one element from each of k sorted lists.",
+    "key_idea": "Keep one element from every list in a min-heap; the range is [heap min, running max]; advancing the minimum's list is the only way to shrink the range.",
+    "approach": [
+      "Push the first element of each list as (value, listIndex, position) into a min-heap",
+      "Track the max of those first elements",
+      "Pop the min; if its list is exhausted stop",
+      "Push the next element from that list, update max",
+      "If newMax - heapMin beats best range, update the answer",
+      "Return the best range"
+    ],
+    "complexity": {
+      "time": "O(N log k) where N is total elements",
+      "space": "O(k)"
+    },
+    "gotcha": "Stop as soon as any list runs out; once a list is exhausted no further range can include all k lists."
+  },
+  {
+    "id": "0637-average-of-levels-in-binary-tree",
+    "patterns": [
+      "BFS",
+      "Tree Traversal"
+    ],
+    "trigger": "Per-level statistics of a binary tree (average, max, count per level).",
+    "key_idea": "Level-order BFS with a snapshot of the queue size lets you process exactly one level per outer loop iteration.",
+    "approach": [
+      "Push root into a deque",
+      "While deque not empty, record levelSize = len(queue)",
+      "Pop levelSize nodes, summing values and enqueuing children",
+      "Append levelSum / levelSize to the result",
+      "Return the result list"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(w) for the widest level"
+    },
+    "gotcha": "Use float division and sum as float; integer division would silently truncate averages."
+  },
+  {
+    "id": "0643-maximum-average-subarray-i",
+    "patterns": [
+      "Sliding Window"
+    ],
+    "trigger": "Best value over every contiguous subarray of a fixed length k.",
+    "key_idea": "A fixed-size window sum can be updated in O(1) by adding the entering element and subtracting the leaving one; maximizing the sum maximizes the average.",
+    "approach": [
+      "Sum the first k elements as the initial window",
+      "For i from k to n-1, add nums[i] and subtract nums[i-k]",
+      "Track the maximum window sum seen",
+      "Return max sum divided by k"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)"
+    },
+    "gotcha": "Dividing inside the loop wastes precision and time; compare sums and divide only once at the end."
+  },
+  {
+    "id": "0645-set-mismatch",
+    "patterns": [
+      "Cyclic Sort",
+      "Hash Map"
+    ],
+    "trigger": "Array holds numbers 1..n with one duplicated and one missing.",
+    "key_idea": "Because values are in 1..n, each value has a home index value-1; swap elements into their homes and the one index whose value is wrong reveals both the duplicate and the missing number.",
+    "approach": [
+      "Iterate i; let j = nums[i] - 1",
+      "If nums[i] != nums[j], swap them and stay at i",
+      "Otherwise advance i",
+      "Scan again: the first i where nums[i] != i+1 gives [nums[i], i+1]"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)"
+    },
+    "gotcha": "Compare nums[i] with nums[j], not i with j; otherwise a duplicate causes an infinite swap loop."
+  },
+  {
+    "id": "0646-maximum-length-of-pair-chain",
+    "patterns": [
+      "Greedy",
+      "Intervals",
+      "Sorting"
+    ],
+    "trigger": "Choose the maximum number of pairs where each next pair starts after the previous one ends.",
+    "key_idea": "This is the classic non-overlapping-intervals problem: sort by end value and greedily take every pair that starts after the current chain end.",
+    "approach": [
+      "Sort pairs by their right endpoint",
+      "Initialize currEnd = -infinity and count = 0",
+      "For each pair, if left > currEnd, take it and set currEnd = right",
+      "Return count"
+    ],
+    "complexity": {
+      "time": "O(n log n)",
+      "space": "O(n) for the sorted copy (or O(1) if sorted in place)"
+    },
+    "gotcha": "Sorting by start instead of end breaks the greedy; a long early-starting pair could block many short ones."
+  },
+  {
+    "id": "0647-palindromic-substrings",
+    "patterns": [
+      "Two Pointers",
+      "String",
+      "Dynamic Programming"
+    ],
+    "trigger": "Count all palindromic substrings of a string.",
+    "key_idea": "Every palindrome has a center; expand outward from each of the 2n-1 centers (single char and between chars) while the ends match. The learner used memoized recursion on (l, r), which is O(n^2) states but heavier.",
+    "approach": [
+      "For each index i, treat it as an odd-length center",
+      "Expand l, r outward while s[l] == s[r], counting each match",
+      "Repeat with center between i and i+1 for even lengths",
+      "Sum the counts from all centers"
+    ],
+    "complexity": {
+      "time": "O(n^2)",
+      "space": "O(1) for expand-around-center"
+    },
+    "gotcha": "Missing the even-length centers halves the answer; 'aa' has 3 palindromic substrings, not 2."
+  },
+  {
+    "id": "0654-maximum-binary-tree",
+    "patterns": [
+      "Recursion",
+      "Divide & Conquer"
+    ],
+    "trigger": "Build a tree where the root is the max element and subtrees come from the left and right slices.",
+    "key_idea": "The definition is already recursive: find the max in the range, make it the root, recurse on the two halves around it.",
+    "approach": [
+      "Define construct(l, r) on the half-open range [l, r)",
+      "Return None if the range is empty",
+      "Find the index of the max in the range",
+      "Root = that value; root.left = construct(l, maxIdx); root.right = construct(maxIdx+1, r)",
+      "Call construct(0, n)"
+    ],
+    "complexity": {
+      "time": "O(n^2) worst case, O(n log n) average",
+      "space": "O(n) recursion depth worst case"
+    },
+    "gotcha": "Off-by-one in the range bounds; using a half-open [l, r) makes the empty check simply l == r."
+  },
+  {
+    "id": "0658-find-k-closest-elements",
+    "patterns": [
+      "Binary Search",
+      "Two Pointers"
+    ],
+    "trigger": "Sorted array, return the k elements closest to a value x, in sorted order.",
+    "key_idea": "The answer is a contiguous window of length k; binary search over its left boundary in [0, n-k] by comparing the distances of arr[mid] and arr[mid+k] to x.",
+    "approach": [
+      "Set left = 0, right = n - k",
+      "While left < right, mid = (left + right) // 2",
+      "If x - arr[mid] > arr[mid+k] - x, the window should shift right: left = mid + 1",
+      "Otherwise right = mid",
+      "Return arr[left : left+k]"
+    ],
+    "complexity": {
+      "time": "O(log(n-k) + k)",
+      "space": "O(1) extra"
+    },
+    "gotcha": "Compare raw differences, not absolute values; abs() breaks the tie-breaking rule that prefers the smaller element."
+  },
+  {
+    "id": "0662-maximum-width-of-binary-tree",
+    "patterns": [
+      "BFS",
+      "Tree Traversal"
+    ],
+    "trigger": "Width of a level counts the null gaps between the leftmost and rightmost nodes.",
+    "key_idea": "Number nodes as if in a complete binary tree (left child 2i, right child 2i+1); the width of a level is last index minus first index plus one.",
+    "approach": [
+      "BFS with (node, index) pairs, starting at (root, 0)",
+      "For each level, width = lastIndex - firstIndex + 1",
+      "Enqueue children with indices 2*i and 2*i+1",
+      "Track the maximum width across levels"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(w) widest level"
+    },
+    "gotcha": "Indices grow exponentially with depth; in Python this is fine, but in other languages normalize by subtracting the level's first index."
+  },
+  {
+    "id": "0680-valid-palindrome-ii",
+    "patterns": [
+      "Two Pointers",
+      "String"
+    ],
+    "trigger": "Palindrome check with permission to delete at most one character.",
+    "key_idea": "Walk inward from both ends; at the first mismatch you have exactly two options, skip the left char or skip the right char, and one of them must then be a plain palindrome.",
+    "approach": [
+      "Set l = 0, r = len(s) - 1",
+      "While s[l] == s[r], move both inward",
+      "On mismatch, return isPalindrome(l+1, r) or isPalindrome(l, r-1)",
+      "If loop finishes, return True"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)"
+    },
+    "gotcha": "Only one deletion is allowed, so the helper must be a strict palindrome check with no further skipping."
+  },
+  {
+    "id": "0684-redundant-connection",
+    "patterns": [
+      "Union-Find",
+      "Graph"
+    ],
+    "trigger": "Undirected graph that is a tree plus exactly one extra edge; find the edge to remove.",
+    "key_idea": "Add edges one by one to a Union-Find; the first edge whose endpoints are already connected closes a cycle and is the answer.",
+    "approach": [
+      "Initialize parent and rank arrays for nodes 1..n",
+      "For each edge (a, b), find roots of a and b",
+      "If roots are equal, return [a, b]",
+      "Otherwise union them by rank"
+    ],
+    "complexity": {
+      "time": "O(n * alpha(n))",
+      "space": "O(n)"
+    },
+    "gotcha": "Nodes are 1-indexed, so allocate n+1 slots; also return the last such edge in input order, which the first-cycle check guarantees."
+  },
+  {
+    "id": "0692-top-k-frequent-words",
+    "patterns": [
+      "Heap / Priority Queue",
+      "Hash Map",
+      "Sorting"
+    ],
+    "trigger": "Top k most frequent items with a tie-break on lexicographic order.",
+    "key_idea": "Count frequencies, then order by (-count, word) so the heap or sort handles both the frequency and the alphabetical tie-break. The learner's variant buckets by count and uses a per-bucket trie to emit words alphabetically.",
+    "approach": [
+      "Count words with a Counter",
+      "Push (-count, word) tuples into a heap",
+      "Pop k times to collect the answer",
+      "Return the collected words"
+    ],
+    "complexity": {
+      "time": "O(n log n) for heap; O(n + k) with bucket + trie",
+      "space": "O(n)"
+    },
+    "gotcha": "Negating the count but not the word makes the tuple order correct; negating both is impossible for strings, so be careful with min-heap direction."
+  },
+  {
+    "id": "0695-max-area-of-island",
+    "patterns": [
+      "BFS",
+      "DFS",
+      "Matrix"
+    ],
+    "trigger": "Count the size of connected components of 1s in a grid.",
+    "key_idea": "Flood-fill each unvisited land cell, marking cells as water when visited so each cell is counted once; the answer is the largest fill size.",
+    "approach": [
+      "Scan every cell; on a 1, start a BFS/DFS",
+      "Mark the cell 0 when enqueued to avoid revisits",
+      "Expand to 4-directional neighbors that are in bounds and equal to 1",
+      "Count cells in the fill and track the maximum",
+      "Return the maximum (0 if no land)"
+    ],
+    "complexity": {
+      "time": "O(m*n)",
+      "space": "O(m*n) worst case queue or recursion"
+    },
+    "gotcha": "Mark a cell visited when you enqueue it, not when you pop it, or the same cell gets counted multiple times."
+  },
+  {
+    "id": "0702-search-in-a-sorted-array-of-unknown-size",
+    "patterns": [
+      "Binary Search"
+    ],
+    "trigger": "Sorted data with unknown length accessed through a get(i) that returns a sentinel past the end.",
+    "key_idea": "Exponential search: double the high index until reader.get(high) >= target, then run normal binary search inside [0, high].",
+    "approach": [
+      "Start with low = 0, high = 1",
+      "While reader.get(high) < target, double high",
+      "Binary search between low and high",
+      "Return the index of target or -1"
+    ],
+    "complexity": {
+      "time": "O(log n)",
+      "space": "O(1)"
+    },
+    "gotcha": "The out-of-bounds sentinel is 2^31 - 1 which is larger than any valid value, so the doubling loop naturally stops."
+  },
+  {
+    "id": "0703-kth-largest-element-in-a-stream",
+    "patterns": [
+      "Heap / Priority Queue",
+      "Design"
+    ],
+    "trigger": "Maintain the kth largest value as numbers keep arriving.",
+    "key_idea": "Keep a min-heap of the k largest elements seen; its root is always the kth largest, and anything smaller than the root can be discarded.",
+    "approach": [
+      "Store k and an empty min-heap",
+      "On add, push the value",
+      "If heap size exceeds k, pop the smallest",
+      "Return heap[0]"
+    ],
+    "complexity": {
+      "time": "O(log k) per add",
+      "space": "O(k)"
+    },
+    "gotcha": "Initial nums may contain fewer than k elements; pushing through add handles it and the heap fills up as values arrive."
+  },
+  {
+    "id": "0704-binary-search",
+    "patterns": [
+      "Binary Search"
+    ],
+    "trigger": "Sorted array and an O(log n) requirement for locating a target.",
+    "key_idea": "Halve the search range each step by comparing the middle element with the target.",
+    "approach": [
+      "Set start = 0, end = n - 1",
+      "While start <= end, mid = (start + end) // 2",
+      "If nums[mid] == target return mid",
+      "If nums[mid] > target, end = mid - 1; else start = mid + 1",
+      "Return -1"
+    ],
+    "complexity": {
+      "time": "O(log n)",
+      "space": "O(1)"
+    },
+    "gotcha": "Using end = mid or start = mid without +-1 causes an infinite loop on a two-element range."
+  },
+  {
+    "id": "0713-subarray-product-less-than-k",
+    "patterns": [
+      "Sliding Window"
+    ],
+    "trigger": "Count contiguous subarrays whose product (of positive numbers) stays below k.",
+    "key_idea": "With positives, the product grows monotonically as the window expands, so every valid window ending at r contributes r - l + 1 subarrays.",
+    "approach": [
+      "Return 0 if k <= 1",
+      "For each r, multiply nums[r] into the running product",
+      "While product >= k, divide out nums[l] and advance l",
+      "Add r - l + 1 to the count",
+      "Return the count"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)"
+    },
+    "gotcha": "k <= 1 must be handled up front; otherwise the shrink loop can push l past r and index errors follow."
+  },
+  {
+    "id": "0729-my-calendar-i",
+    "patterns": [
+      "Intervals",
+      "Binary Search",
+      "Design"
+    ],
+    "trigger": "Repeatedly add bookings and reject any that overlap existing ones.",
+    "key_idea": "Keep the intervals sorted; a new [s, e) is valid only if the previous interval ends by s and the next interval starts at or after e.",
+    "approach": [
+      "Keep a sorted list of (start, end) tuples",
+      "Find insertion index with bisect_right",
+      "Reject if previous interval's end > start",
+      "Reject if next interval's start < end",
+      "Otherwise insert and return True"
+    ],
+    "complexity": {
+      "time": "O(log n) search plus O(n) insert per booking",
+      "space": "O(n)"
+    },
+    "gotcha": "Intervals are half-open, so an event ending at 20 and another starting at 20 do not overlap."
+  },
+  {
+    "id": "0739-daily-temperatures",
+    "patterns": [
+      "Monotonic Stack"
+    ],
+    "trigger": "For each element, how far to the next greater element on the right.",
+    "key_idea": "Maintain a stack of indices with decreasing temperatures; when a warmer day arrives, it resolves every colder day still on the stack.",
+    "approach": [
+      "Initialize res with zeros and an empty stack of indices",
+      "For each day i, while top of stack is colder than temps[i], pop it",
+      "Set res[popped] = i - popped",
+      "Push i",
+      "Return res"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)"
+    },
+    "gotcha": "Push indices rather than temperatures, or you cannot compute the distance."
+  },
+  {
+    "id": "0739-next-greater-element-i",
+    "patterns": [
+      "Monotonic Stack",
+      "Hash Map"
+    ],
+    "trigger": "Next greater element for a subset of values, looked up in a larger array.",
+    "key_idea": "Precompute next-greater for every element of nums2 with a decreasing stack, store it in a map, then answer nums1 queries by lookup.",
+    "approach": [
+      "Iterate nums2 with a stack of values",
+      "While top < current, pop and record map[popped] = current",
+      "Push current",
+      "Return [map.get(n, -1) for n in nums1]"
+    ],
+    "complexity": {
+      "time": "O(n + m)",
+      "space": "O(n)"
+    },
+    "gotcha": "Elements left on the stack have no greater element; default the lookup to -1 instead of inserting them."
+  },
+  {
+    "id": "0746-min-cost-climbing-stairs",
+    "patterns": [
+      "Dynamic Programming"
+    ],
+    "trigger": "Reach the top taking 1 or 2 steps, paying a cost per step, with a free start at index 0 or 1.",
+    "key_idea": "dp[i] is the min cost to stand on step i; you arrive from i-1 or i-2 and pay the cost of the step you left.",
+    "approach": [
+      "Set dp[0] = dp[1] = 0",
+      "For i from 2 to n, dp[i] = min(dp[i-1] + cost[i-1], dp[i-2] + cost[i-2])",
+      "Return dp[n]"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n), reducible to O(1)"
+    },
+    "gotcha": "The top is index n, one past the last step, so dp has n+1 entries and you pay for the step you leave, not the one you land on."
+  },
+  {
+    "id": "0759-employee-free-time",
+    "patterns": [
+      "Intervals",
+      "Sorting",
+      "K-way Merge"
+    ],
+    "trigger": "Find gaps common to every employee's schedule of sorted, non-overlapping intervals.",
+    "key_idea": "Flatten all intervals, sort by start, and sweep merging overlaps; each time the next interval starts after the merged end, that gap is free time for everyone.",
+    "approach": [
+      "Flatten all employees' intervals into one list",
+      "Sort by start",
+      "Keep prev as the current merged interval",
+      "If prev.end < next.start, record gap (prev.end, next.start) and set prev = next",
+      "Else extend prev.end = max(prev.end, next.end)",
+      "Return the gaps"
+    ],
+    "complexity": {
+      "time": "O(N log N) for N total intervals",
+      "space": "O(N)"
+    },
+    "gotcha": "Extend prev.end with max, not just assignment, since a later interval may end earlier than the current merged block."
+  },
+  {
+    "id": "0767-reorganize-string",
+    "patterns": [
+      "Greedy",
+      "Hash Map",
+      "Heap / Priority Queue"
+    ],
+    "trigger": "Rearrange characters so no two adjacent characters are equal.",
+    "key_idea": "It is possible iff the most frequent char count is at most (n+1)//2; place that char at even indices first, then fill remaining chars into the leftover even slots and then odd slots.",
+    "approach": [
+      "Count characters and find the most frequent one",
+      "Return empty string if its count > (n+1)//2",
+      "Fill the most frequent char at indices 0, 2, 4, ...",
+      "Continue placing other chars at the next even indices, wrapping to index 1",
+      "Join and return the array"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)"
+    },
+    "gotcha": "The most frequent character must be placed first; placing others first can leave adjacent even slots for it."
+  },
+  {
+    "id": "0771-jewels-and-stones",
+    "patterns": [
+      "Hash Map",
+      "String"
+    ],
+    "trigger": "Count how many characters of one string belong to a set defined by another string.",
+    "key_idea": "Put the jewel characters in a set for O(1) membership and count stone characters that are members.",
+    "approach": [
+      "Build a set from jewels",
+      "Iterate stones and count characters found in the set",
+      "Return the count"
+    ],
+    "complexity": {
+      "time": "O(j + s)",
+      "space": "O(j)"
+    },
+    "gotcha": "Letters are case sensitive; do not lowercase either string."
+  },
+  {
+    "id": "0783-minimum-distance-between-bst-nodes",
+    "patterns": [
+      "Binary Search Tree",
+      "Tree Traversal"
+    ],
+    "trigger": "Minimum difference between any two values in a BST.",
+    "key_idea": "In-order traversal visits BST values in sorted order, so the minimum difference is always between consecutive visited nodes.",
+    "approach": [
+      "Do an in-order traversal keeping prev node",
+      "At each node, update diff = min(diff, node.val - prev.val)",
+      "Set prev = node",
+      "Return diff"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h) recursion"
+    },
+    "gotcha": "Checking 'if self.prev' fails when the previous node's value is 0; check 'is not None' instead."
+  },
+  {
+    "id": "0785-is-graph-bipartite",
+    "patterns": [
+      "Graph",
+      "Union-Find",
+      "BFS"
+    ],
+    "trigger": "Can the nodes be split into two groups so every edge crosses between groups (2-coloring).",
+    "key_idea": "All neighbors of a node must be in the same group, so union every node's neighbors together; if a node ever shares a root with one of its neighbors, it is not bipartite. BFS 2-coloring is the equivalent alternative.",
+    "approach": [
+      "Initialize Union-Find over n nodes",
+      "For each node, take its first neighbor as the group anchor",
+      "For every neighbor, if find(node) == find(neighbor) return False",
+      "Union the neighbor with the anchor",
+      "Return True"
+    ],
+    "complexity": {
+      "time": "O(V + E) * alpha",
+      "space": "O(V)"
+    },
+    "gotcha": "Graph may be disconnected; iterate over every node, not just a BFS from node 0."
+  },
+  {
+    "id": "0802-find-eventual-safe-states",
+    "patterns": [
+      "DFS",
+      "Graph",
+      "Topological Sort"
+    ],
+    "trigger": "Directed graph; nodes are safe if every path from them reaches a terminal node (no cycle reachable).",
+    "key_idea": "DFS with a memo: mark a node unsafe on entry (in progress), then safe only after all neighbors prove safe; revisiting an in-progress node means a cycle.",
+    "approach": [
+      "Keep a dict safe[node] initially empty",
+      "On visiting a node, set safe[node] = False before recursing",
+      "Recurse on neighbors; if any is unsafe return False",
+      "Set safe[node] = True and return True",
+      "Collect nodes where dfs returns True"
+    ],
+    "complexity": {
+      "time": "O(V + E)",
+      "space": "O(V)"
+    },
+    "gotcha": "Marking a node False before exploring its neighbors is what detects cycles; setting it only after would loop forever."
+  },
+  {
+    "id": "0815-bus-routes",
+    "patterns": [
+      "BFS",
+      "Graph",
+      "Hash Map"
+    ],
+    "trigger": "Minimum number of buses (transfers) to get from a source stop to a target stop.",
+    "key_idea": "BFS over buses rather than stops: two buses are adjacent if they share a stop, so each BFS layer costs one more bus.",
+    "approach": [
+      "Map each stop to the list of buses serving it",
+      "Start BFS with all buses at the source stop, count = 1",
+      "For each bus in the layer, scan its stops; if target found return count",
+      "Enqueue unseen buses at each stop",
+      "Increment count per layer; return -1 if BFS ends"
+    ],
+    "complexity": {
+      "time": "O(sum of route lengths * buses per stop)",
+      "space": "O(total stops)"
+    },
+    "gotcha": "source == target must return 0 before any BFS; also mark buses seen on enqueue to avoid re-expanding."
+  },
+  {
+    "id": "0833-bus-routes",
+    "patterns": [
+      "BFS",
+      "Graph",
+      "Hash Map"
+    ],
+    "trigger": "Minimum number of buses (transfers) to get from a source stop to a target stop.",
+    "key_idea": "BFS over buses with a stop-to-buses map; also track visited stops so each stop is scanned only once, which keeps the traversal linear in total route size.",
+    "approach": [
+      "Build stop -> buses map; return -1 if source or target is unknown",
+      "Start with all buses at source as the first layer, count = 1",
+      "For each bus, iterate its stops that are not yet visited",
+      "Return count if a stop equals target; otherwise enqueue unseen buses",
+      "Increment count per layer; return -1 at the end"
+    ],
+    "complexity": {
+      "time": "O(total stops across routes)",
+      "space": "O(total stops)"
+    },
+    "gotcha": "Without a visited-stops set, a hub stop shared by many routes is rescanned per bus and can time out."
+  },
+  {
+    "id": "0844-backspace-string-compare",
+    "patterns": [
+      "Two Pointers",
+      "String"
+    ],
+    "trigger": "Compare two strings where '#' means backspace, ideally in O(1) space.",
+    "key_idea": "Scan both strings from the end; count pending backspaces to skip deleted characters, then compare the next surviving characters.",
+    "approach": [
+      "Start pointers at the ends of s and t",
+      "For each string, skip back over chars while tracking backspace count",
+      "If both pointers are exhausted return True; if only one, return False",
+      "Compare the surviving characters; mismatch returns False",
+      "Move both pointers left and repeat"
+    ],
+    "complexity": {
+      "time": "O(n + m)",
+      "space": "O(1)"
+    },
+    "gotcha": "A backspace can only cancel characters before it, which is why you must scan right to left, not left to right."
+  },
+  {
+    "id": "0852-peak-index-in-a-mountain-array",
+    "patterns": [
+      "Binary Search"
+    ],
+    "trigger": "Array rises then falls; find the peak in O(log n).",
+    "key_idea": "Compare mid with mid+1: if arr[mid] < arr[mid+1] you are on the ascending slope so the peak is right, otherwise it is at mid or left.",
+    "approach": [
+      "Set low = 0, high = n - 1",
+      "While low < high, mid = (low + high) // 2",
+      "If arr[mid] > arr[mid+1], high = mid",
+      "Else low = mid + 1",
+      "Return low"
+    ],
+    "complexity": {
+      "time": "O(log n)",
+      "space": "O(1)"
+    },
+    "gotcha": "Use low < high with high = mid (not mid - 1) so the peak itself is never skipped."
+  },
+  {
+    "id": "0874-walking-robot-simulation",
+    "patterns": [
+      "Simulation",
+      "Hash Map"
+    ],
+    "trigger": "Execute a list of turn/move commands on a grid with obstacles and report the farthest point.",
+    "key_idea": "Store obstacles in a set of tuples and step one unit at a time, stopping a move early when the next cell is blocked; track max x^2 + y^2 along the way.",
+    "approach": [
+      "Put obstacle coordinates into a set",
+      "Keep a direction index over (dx, dy) for N, E, S, W",
+      "On -1 or -2, rotate the direction index",
+      "On k, step up to k times, breaking if the next cell is an obstacle",
+      "Update max distance squared after every step"
+    ],
+    "complexity": {
+      "time": "O(commands * 9 + obstacles)",
+      "space": "O(obstacles)"
+    },
+    "gotcha": "The answer is the maximum distance ever reached, not the final position; update inside the step loop."
+  },
+  {
+    "id": "0885-spiral-matrix-iii",
+    "patterns": [
+      "Simulation",
+      "Matrix"
+    ],
+    "trigger": "Walk a clockwise spiral from a start cell, recording only cells that fall inside the grid.",
+    "key_idea": "Spiral step lengths follow 1,1,2,2,3,3,...: every two direction changes the run length grows by one; keep walking outside the grid and just skip out-of-bounds cells.",
+    "approach": [
+      "Directions in clockwise order: east, south, west, north",
+      "Loop until rows*cols cells collected",
+      "For two consecutive directions, walk 'width' steps each",
+      "Record a cell only if it lies inside the grid",
+      "After the two runs, increase width by one"
+    ],
+    "complexity": {
+      "time": "O(max(rows, cols)^2)",
+      "space": "O(rows * cols) for output"
+    },
+    "gotcha": "The starting cell must be recorded before the first move; append inside the step loop before incrementing coordinates."
+  },
+  {
+    "id": "0895-maximum-frequency-stack",
+    "patterns": [
+      "Design",
+      "Stack",
+      "Hash Map"
+    ],
+    "trigger": "Pop the most frequent element, breaking ties by most recently pushed.",
+    "key_idea": "Keep a stack per frequency level: pushing val appends it to stack[freq[val]]; popping takes from the highest-frequency stack, which automatically respects recency.",
+    "approach": [
+      "Maintain freq map, group map from frequency to list, and maxFreq",
+      "On push, increment freq[val], update maxFreq, append val to group[freq[val]]",
+      "On pop, pop from group[maxFreq], decrement freq[x]",
+      "If group[maxFreq] becomes empty, decrement maxFreq",
+      "Return x"
+    ],
+    "complexity": {
+      "time": "O(1) per operation",
+      "space": "O(n)"
+    },
+    "gotcha": "A value with frequency 3 appears in group[1], group[2] and group[3]; do not remove it from lower groups on pop."
+  },
+  {
+    "id": "0904-fruit-into-baskets",
+    "patterns": [
+      "Sliding Window",
+      "Hash Map"
+    ],
+    "trigger": "Longest contiguous subarray containing at most two distinct values.",
+    "key_idea": "Grow a window with a frequency map; whenever the map exceeds two keys, shrink from the left until it has two again.",
+    "approach": [
+      "Keep a count map and left pointer l",
+      "For each r, add fruits[r] to the map",
+      "While map has more than 2 keys, decrement fruits[l], delete at zero, advance l",
+      "Update the best length r - l + 1",
+      "Return the best"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1) since at most 3 keys"
+    },
+    "gotcha": "Delete keys whose count hits zero, otherwise len(map) never shrinks and the window never becomes valid."
+  },
+  {
+    "id": "0907-sum-of-subarray-minimums",
+    "patterns": [
+      "Monotonic Stack"
+    ],
+    "trigger": "Sum of the minimum over every subarray (contribution counting).",
+    "key_idea": "Each element is the minimum of (index - prevSmaller) * (nextSmaller - index) subarrays; a monotonic increasing stack finds both boundaries in one pass.",
+    "approach": [
+      "Append a sentinel 0 to flush the stack at the end",
+      "Iterate i; while arr[stack top] > arr[i], pop index",
+      "left = index - (new stack top or -1); right = i - index",
+      "Add arr[index] * left * right to the result",
+      "Push i; return result modulo 10^9 + 7"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)"
+    },
+    "gotcha": "Handle duplicates with strict inequality on one side only; popping on > (not >=) avoids double-counting equal values."
+  },
+  {
+    "id": "0921-minimum-add-to-make-parentheses-valid",
+    "patterns": [
+      "Stack",
+      "Greedy",
+      "String"
+    ],
+    "trigger": "Minimum insertions to balance a parentheses string.",
+    "key_idea": "A counter of unmatched '(' replaces a stack; a ')' with no open partner needs an inserted '(' and every unmatched '(' at the end needs a ')'.",
+    "approach": [
+      "Keep open = 0 and needed = 0",
+      "On '(', increment open",
+      "On ')', decrement open if positive, else increment needed",
+      "Return open + needed"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)"
+    },
+    "gotcha": "Never let the open counter go negative; an extra ')' must be recorded separately rather than subtracted."
+  },
+  {
+    "id": "0930-binary-subarrays-with-sum",
+    "patterns": [
+      "Prefix Sum",
+      "Hash Map",
+      "Sliding Window"
+    ],
+    "trigger": "Count subarrays whose sum equals a target, in an array where sliding-window shrink is awkward (goal may be 0).",
+    "key_idea": "A subarray [j+1..i] sums to goal iff prefix[i] - prefix[j] == goal, so count how many earlier prefixes equal prefix[i] - goal.",
+    "approach": [
+      "Track running sum and a map of prefix sum counts",
+      "For each element, add it to the running sum",
+      "If running sum == goal, increment count",
+      "Add map[runningSum - goal] to count",
+      "Increment map[runningSum]; return count"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)"
+    },
+    "gotcha": "goal == 0 breaks the naive sliding window; the prefix-sum map handles it uniformly (or use atMost(goal) - atMost(goal-1))."
+  },
+  {
+    "id": "0932-beautiful-array",
+    "patterns": [
+      "Divide & Conquer",
+      "Recursion",
+      "Math"
+    ],
+    "trigger": "Construct a permutation with no arithmetic-progression triple nums[i], nums[k], nums[j].",
+    "key_idea": "Odd + even is never divisible by 2, so put all odds before all evens; a beautiful array A maps to beautiful arrays 2A-1 (odds) and 2A (evens), so build recursively from [1].",
+    "approach": [
+      "Base case n = 1 returns [1]",
+      "Recursively build beautiful array for (n+1)//2 and for n//2",
+      "Map the first to 2x-1 and the second to 2x",
+      "Concatenate odds then evens",
+      "Memoize results by n"
+    ],
+    "complexity": {
+      "time": "O(n log n)",
+      "space": "O(n log n) with memo"
+    },
+    "gotcha": "The odd half must use ceil(n/2) elements and the even half floor(n/2), otherwise the result is not a permutation of 1..n."
+  },
+  {
+    "id": "0938-range-sum-of-bst",
+    "patterns": [
+      "Binary Search Tree",
+      "DFS"
+    ],
+    "trigger": "Sum of BST node values within [low, high].",
+    "key_idea": "Use the BST ordering to prune: if a node is below low, only its right subtree can contain valid values; if above high, only the left.",
+    "approach": [
+      "Return 0 for an empty node",
+      "If node.val < low, recurse only right",
+      "If node.val > high, recurse only left",
+      "Otherwise add node.val and recurse both sides",
+      "Return the sum"
+    ],
+    "complexity": {
+      "time": "O(n) worst, O(h + k) with pruning",
+      "space": "O(h) recursion"
+    },
+    "gotcha": "Range is inclusive, so use strict < low and > high for the pruning checks."
+  },
+  {
+    "id": "0940-distinct-subsequences-ii",
+    "patterns": [
+      "Dynamic Programming",
+      "Hash Map"
+    ],
+    "trigger": "Count distinct subsequences of a string modulo 10^9+7.",
+    "key_idea": "Appending char c to every existing subsequence (plus the empty one) doubles the count, but subsequences that ended in c previously were already counted, so subtract the count contributed the last time c was seen.",
+    "approach": [
+      "Keep total = 0 and last[c] = subsequences ending in c",
+      "For each char c, new = total + 1 - last[c]",
+      "total = (total + new) mod M",
+      "last[c] += new",
+      "Return total mod M"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(26)"
+    },
+    "gotcha": "Subtracting can go negative before the modulo in some languages; in Python the final % M fixes it, elsewhere add M first."
+  },
+  {
+    "id": "0945-minimum-increment-to-make-array-unique",
+    "patterns": [
+      "Greedy",
+      "Sorting"
+    ],
+    "trigger": "Make all values unique using only +1 increments, minimizing total increments.",
+    "key_idea": "Duplicates at value v must push up to v+1, cascading; a counting array (or a sorted sweep) lets you carry the surplus forward and charge one move per carried element.",
+    "approach": [
+      "Build a count array sized len(nums) + max(nums)",
+      "Sweep i from 0 upward",
+      "If count[i] > 1, carry dup = count[i] - 1 to count[i+1]",
+      "Add dup to the total moves",
+      "Return the total"
+    ],
+    "complexity": {
+      "time": "O(n + max)",
+      "space": "O(n + max)"
+    },
+    "gotcha": "The count array needs headroom of len(nums) beyond the max value because all duplicates can cascade past it."
+  }
+]

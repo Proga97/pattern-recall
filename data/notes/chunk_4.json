@@ -1,0 +1,913 @@
+[
+ {
+  "id": "0946-validate-stack-sequences",
+  "patterns": [
+   "Stack",
+   "Simulation"
+  ],
+  "trigger": "Two sequences given, asked whether one could be the pop order of the other on a stack.",
+  "key_idea": "Greedily simulate: push each value, and pop eagerly whenever the stack top matches the next expected popped value; if everything can be matched the stack ends empty.",
+  "approach": [
+   "Keep an empty stack and a pointer into popped.",
+   "For each value in pushed, push it.",
+   "While stack top equals popped[pointer], pop and advance pointer.",
+   "Return true if the stack is empty at the end."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Popping must be done in a while loop after each push, not just once, or you miss consecutive matches."
+ },
+ {
+  "id": "0973-k-closest-points-to-origin",
+  "patterns": [
+   "Heap / Priority Queue",
+   "Sorting"
+  ],
+  "trigger": "Asked for the k smallest or closest items from an unsorted collection.",
+  "key_idea": "Compare squared distances (no sqrt needed) and keep a max-heap of size k so the farthest candidate is evicted; the learner used a full min-heap and popped k times, which also works.",
+  "approach": [
+   "Compute squared distance x*x + y*y for each point.",
+   "Push (-dist, point) into a heap; if size exceeds k, pop the largest.",
+   "Remaining k entries are the answer."
+  ],
+  "complexity": {
+   "time": "O(n log k)",
+   "space": "O(k)"
+  },
+  "gotcha": "Skip the sqrt: it is slow and unnecessary since squared distance preserves ordering."
+ },
+ {
+  "id": "0974-subarray-sums-divisible-by-k",
+  "patterns": [
+   "Prefix Sum",
+   "Hash Map"
+  ],
+  "trigger": "Count subarrays whose sum satisfies a divisibility condition.",
+  "key_idea": "Two prefix sums with the same remainder mod k bound a subarray whose sum is divisible by k, so count pairs of equal remainders using a frequency map.",
+  "approach": [
+   "Init remainder map with {0: 1} and running prefix = 0.",
+   "For each number, add to prefix and take prefix % k.",
+   "Add the current count of that remainder to the answer.",
+   "Increment the remainder's count."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(k)"
+  },
+  "gotcha": "Negative sums need normalizing to a non-negative remainder; Python's % already does this but many languages do not."
+ },
+ {
+  "id": "0975-range-sum-of-bst",
+  "patterns": [
+   "Binary Search Tree",
+   "DFS"
+  ],
+  "trigger": "Sum or collect BST node values inside a given [low, high] range.",
+  "key_idea": "Use the BST property to prune: if a node is below low skip its left subtree, if above high skip its right subtree.",
+  "approach": [
+   "Return 0 for a null node.",
+   "If node.val < low, recurse only right.",
+   "If node.val > high, recurse only left.",
+   "Otherwise add node.val and recurse both sides."
+  ],
+  "complexity": {
+   "time": "O(n) worst, O(h + matches) typical",
+   "space": "O(h)"
+  },
+  "gotcha": "Traversing the whole tree without pruning is still accepted but misses the point of the BST property."
+ },
+ {
+  "id": "0977-squares-of-a-sorted-array",
+  "patterns": [
+   "Two Pointers"
+  ],
+  "trigger": "Sorted array containing negatives, need the squares back in sorted order.",
+  "key_idea": "The largest squares are at the two ends of the array, so compare the ends with two pointers and fill the result from the back.",
+  "approach": [
+   "Set left = 0, right = n - 1, result array of size n.",
+   "Compare squares at left and right; place the larger at the back position.",
+   "Move the pointer whose value was used inward.",
+   "Repeat until pointers cross."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Comparing raw values instead of absolute values or squares breaks when negatives are present."
+ },
+ {
+  "id": "0986-interval-list-intersections",
+  "patterns": [
+   "Intervals",
+   "Two Pointers"
+  ],
+  "trigger": "Two sorted, disjoint interval lists and you need their overlaps.",
+  "key_idea": "The overlap of two intervals is [max(starts), min(ends)]; advance whichever interval ends first since it cannot overlap anything further.",
+  "approach": [
+   "Use pointers i and j into the two lists.",
+   "Compute start = max of starts, end = min of ends.",
+   "If start <= end, record [start, end].",
+   "Advance the pointer whose interval has the smaller end."
+  ],
+  "complexity": {
+   "time": "O(m + n)",
+   "space": "O(1) extra"
+  },
+  "gotcha": "Intervals are closed, so a single shared point (start == end) still counts as an intersection."
+ },
+ {
+  "id": "0992-subarrays-with-k-different-integers",
+  "patterns": [
+   "Sliding Window",
+   "Hash Map"
+  ],
+  "trigger": "Count subarrays with exactly k distinct values.",
+  "key_idea": "Exactly k = atMost(k) - atMost(k-1); the learner's variant keeps two left pointers (farthest and nearest valid) and adds their gap for each right end.",
+  "approach": [
+   "Write helper atMost(k) using a sliding window with a frequency map.",
+   "Expand right; shrink left while distinct count exceeds k.",
+   "Add window length (r - l + 1) to the count each step.",
+   "Return atMost(k) - atMost(k - 1)."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(k)"
+  },
+  "gotcha": "A single window cannot count exactly-k directly since shrinking can skip valid subarrays; use the atMost difference or three pointers."
+ },
+ {
+  "id": "1004-max-consecutive-ones-iii",
+  "patterns": [
+   "Sliding Window"
+  ],
+  "trigger": "Longest run of a value allowed at most k exceptions or flips.",
+  "key_idea": "Maintain a window containing at most k zeros; the longest such window is the answer.",
+  "approach": [
+   "Expand right, counting zeros in the window.",
+   "While zeros > k, move left forward, decrementing when passing a zero.",
+   "Update best with the window length after each step."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "You never actually flip anything; track the zero count and keep the window valid instead."
+ },
+ {
+  "id": "1029-two-city-scheduling",
+  "patterns": [
+   "Greedy",
+   "Sorting"
+  ],
+  "trigger": "Assign items to two groups of equal size while minimizing total cost.",
+  "key_idea": "Sort people by (costB - costA); those with the smallest difference benefit most from city B, so send the first half to B and the rest to A.",
+  "approach": [
+   "Build list of [costB - costA, costA, costB].",
+   "Sort ascending by the difference.",
+   "First n people pay costB, remaining n pay costA.",
+   "Return the total."
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Sending everyone to their cheaper city ignores the equal-split constraint; sort by the difference, not the raw cost."
+ },
+ {
+  "id": "1046-last-stone-weight",
+  "patterns": [
+   "Heap / Priority Queue",
+   "Simulation"
+  ],
+  "trigger": "Repeatedly take the two largest elements, combine them, and put the result back.",
+  "key_idea": "A max-heap gives the two heaviest stones in O(log n) each time; simulate until one stone remains.",
+  "approach": [
+   "Negate values and heapify to get a max-heap in Python.",
+   "While more than one stone, pop the two largest.",
+   "Push their difference if nonzero.",
+   "Return the remaining stone or 0."
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Python only has a min-heap, so forget to negate and you get the smallest stones instead."
+ },
+ {
+  "id": "1047-remove-all-adjacent-duplicates-in-string",
+  "patterns": [
+   "Stack",
+   "String"
+  ],
+  "trigger": "Repeatedly cancel adjacent equal pairs until none remain.",
+  "key_idea": "A stack naturally handles chains of cancellations: pop when the incoming char matches the top, else push.",
+  "approach": [
+   "Iterate characters of s.",
+   "If stack top equals the char, pop it.",
+   "Otherwise push the char.",
+   "Join the stack into the result."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Removing pairs with repeated string scans is O(n^2); the stack handles newly adjacent pairs automatically."
+ },
+ {
+  "id": "1051-height-checker",
+  "patterns": [
+   "Sorting"
+  ],
+  "trigger": "Count positions where an array differs from its sorted version.",
+  "key_idea": "Sort a copy and compare index by index; counting sort works since heights are bounded.",
+  "approach": [
+   "Create expected = sorted(heights).",
+   "Count indices where heights[i] != expected[i].",
+   "Return the count."
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(n)"
+  },
+  "gotcha": "You must compare against the sorted copy, not sort in place and lose the original."
+ },
+ {
+  "id": "1095-find-in-mountain-array",
+  "patterns": [
+   "Binary Search"
+  ],
+  "trigger": "Search in an array that first increases then decreases, with a limited number of reads.",
+  "key_idea": "Binary search three times: first for the peak (compare mid with mid+1), then ascending search on the left, then descending search on the right.",
+  "approach": [
+   "Find peak: if arr[mid] > arr[mid+1] go left, else right.",
+   "Binary search target in [0, peak] ascending.",
+   "If not found, binary search in [peak, end] with reversed comparisons.",
+   "Return the first index found or -1."
+  ],
+  "complexity": {
+   "time": "O(log n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Search the ascending half first because the problem asks for the minimum index."
+ },
+ {
+  "id": "1122-relative-sort-array",
+  "patterns": [
+   "Hash Map",
+   "Sorting"
+  ],
+  "trigger": "Sort one array according to the order defined by another array.",
+  "key_idea": "Count occurrences of arr1, emit them in arr2's order, then append leftover values sorted ascending.",
+  "approach": [
+   "Count frequencies of arr1 in a map.",
+   "For each value in arr2, output it count times and delete it.",
+   "Sort remaining map keys and output them with their counts.",
+   "Concatenate the two parts."
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Leftover elements not in arr2 must be sorted ascending, not left in original order."
+ },
+ {
+  "id": "1137-n-th-tribonacci-number",
+  "patterns": [
+   "Dynamic Programming"
+  ],
+  "trigger": "A sequence where each term is a fixed combination of the previous few terms.",
+  "key_idea": "Bottom-up DP needs only the last three values, so roll three variables instead of an array.",
+  "approach": [
+   "Handle n = 0, 1, 2 directly.",
+   "Keep three variables for T(i-3), T(i-2), T(i-1).",
+   "Loop from 3 to n, shifting variables and summing.",
+   "Return the last variable."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Naive recursion is exponential; always memoize or iterate."
+ },
+ {
+  "id": "1161-maximum-level-sum-of-a-binary-tree",
+  "patterns": [
+   "BFS",
+   "Tree Traversal"
+  ],
+  "trigger": "A tree question phrased in terms of levels or depth sums.",
+  "key_idea": "Level-order BFS sums each level as you go; track the first level whose sum exceeds the current max.",
+  "approach": [
+   "Queue starts with the root at level 1.",
+   "Process one whole level at a time, summing values.",
+   "If sum > best, record best and this level.",
+   "Enqueue children for the next level."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(w) for max width"
+  },
+  "gotcha": "Use strict > when updating so ties return the smallest level."
+ },
+ {
+  "id": "1167-minimum-cost-to-connect-sticks",
+  "patterns": [
+   "Heap / Priority Queue",
+   "Greedy"
+  ],
+  "trigger": "Repeatedly merge two items where the cost is their sum and you want the minimum total.",
+  "key_idea": "Always merge the two smallest sticks (Huffman idea) so large sums are added as few times as possible.",
+  "approach": [
+   "Heapify the sticks as a min-heap.",
+   "While more than one stick, pop the two smallest.",
+   "Add their sum to the cost and push the sum back.",
+   "Return the total cost."
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(n)"
+  },
+  "gotcha": "A single stick costs 0; the loop must not run when only one element remains."
+ },
+ {
+  "id": "1189-maximum-number-of-balloons",
+  "patterns": [
+   "Hash Map",
+   "String"
+  ],
+  "trigger": "How many times can a target word be formed from a multiset of letters.",
+  "key_idea": "Count each letter in text and divide by how many times the word needs it; the minimum ratio limits the count.",
+  "approach": [
+   "Count letters of text that appear in the word.",
+   "Divide counts for l and o by 2 since balloon needs two each.",
+   "Return the minimum across b, a, l, o, n."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Forgetting that l and o appear twice in balloon overcounts the answer."
+ },
+ {
+  "id": "1207-unique-number-of-occurrences",
+  "patterns": [
+   "Hash Map"
+  ],
+  "trigger": "Check whether every value's frequency is distinct.",
+  "key_idea": "Build a frequency map, then compare the number of frequencies to the size of the set of frequencies.",
+  "approach": [
+   "Count each value in a dict.",
+   "Put the counts into a set.",
+   "Return True if set size equals dict size."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Compare the frequencies for uniqueness, not the values themselves."
+ },
+ {
+  "id": "1209-remove-all-adjacent-duplicates-in-string-ii",
+  "patterns": [
+   "Stack",
+   "String"
+  ],
+  "trigger": "Remove groups of k adjacent equal characters repeatedly.",
+  "key_idea": "Store (count, char) pairs on a stack; increment the top's count on a match and pop when it reaches k, which handles cascades naturally.",
+  "approach": [
+   "For each char, if stack top has same char, increment its count.",
+   "Otherwise push [1, char].",
+   "If the top's count hits k, pop it.",
+   "Rebuild the string by repeating each char by its count."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Storing only characters forces repeated k-length checks; storing counts keeps it linear."
+ },
+ {
+  "id": "1268-search-suggestions-system",
+  "patterns": [
+   "Trie",
+   "Sorting"
+  ],
+  "trigger": "Return top suggestions after each typed prefix of a query.",
+  "key_idea": "Insert products into a trie, then for each prefix walk to its node and DFS in alphabetical order, stopping after 3 words; sorting plus binary search also works.",
+  "approach": [
+   "Insert every product into a trie.",
+   "For each prefix of searchWord, walk the trie to that node.",
+   "DFS children in a-z order, collecting words until 3 are found.",
+   "If the prefix node is missing, append an empty list."
+  ],
+  "complexity": {
+   "time": "O(total chars + m * 26 * depth)",
+   "space": "O(total chars)"
+  },
+  "gotcha": "Once a prefix has no match, every longer prefix also has none; results must still be lexicographically smallest."
+ },
+ {
+  "id": "1310-xor-queries-of-a-subarray",
+  "patterns": [
+   "Prefix Sum",
+   "Bit Manipulation"
+  ],
+  "trigger": "Many range queries over an array with an operation that has an inverse.",
+  "key_idea": "XOR is its own inverse, so prefix XOR lets any range be answered as prefix[r+1] ^ prefix[l].",
+  "approach": [
+   "Build prefix where prefix[i+1] = prefix[i] ^ arr[i].",
+   "For each query (l, r) answer prefix[r+1] ^ prefix[l].",
+   "Return the list of answers."
+  ],
+  "complexity": {
+   "time": "O(n + q)",
+   "space": "O(n)"
+  },
+  "gotcha": "Off-by-one on prefix indexing; the size n+1 array with prefix[0] = 0 avoids special-casing l = 0."
+ },
+ {
+  "id": "1312-minimum-insertion-steps-to-make-a-string-palindrome",
+  "patterns": [
+   "Dynamic Programming",
+   "String"
+  ],
+  "trigger": "Minimum edits to make a string a palindrome.",
+  "key_idea": "Answer is n minus the longest palindromic subsequence; equivalently dp(l, r) matches ends when equal, else 1 plus the better of dropping one end.",
+  "approach": [
+   "Define dfs(l, r) = min insertions for s[l..r].",
+   "If l >= r return 0.",
+   "If s[l] == s[r], return dfs(l+1, r-1).",
+   "Else return 1 + min(dfs(l+1, r), dfs(l, r-1)).",
+   "Memoize on (l, r)."
+  ],
+  "complexity": {
+   "time": "O(n^2)",
+   "space": "O(n^2)"
+  },
+  "gotcha": "Deep recursion may hit Python's limit on long strings; iterate over increasing lengths if needed."
+ },
+ {
+  "id": "1347-minimum-number-of-steps-to-make-two-strings-anagram",
+  "patterns": [
+   "Hash Map",
+   "String"
+  ],
+  "trigger": "Make one string an anagram of another with minimum replacements.",
+  "key_idea": "Count t's letters, subtract s's letters; the sum of positive leftovers is how many characters in t must change.",
+  "approach": [
+   "Count characters of t.",
+   "Decrement the count for each character of s.",
+   "Sum all positive counts and return."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Only sum the positive side; summing absolute differences double-counts."
+ },
+ {
+  "id": "1406-stone-game-iii",
+  "patterns": [
+   "Dynamic Programming",
+   "Recursion"
+  ],
+  "trigger": "Two players alternate taking 1 to 3 items from the front and each plays optimally.",
+  "key_idea": "Let dp[i] be the best score difference the current player can achieve from index i; take 1, 2, or 3 stones and subtract the opponent's best from the rest.",
+  "approach": [
+   "Define dfs(i) returning best (self - opponent) from i.",
+   "Try taking 1, 2, or 3 stones, adding their sum minus dfs(next).",
+   "Memoize and return the max.",
+   "Compare dfs(0) with 0 to decide Alice, Bob, or Tie."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Model the score as a difference, not two separate totals, or the state explodes."
+ },
+ {
+  "id": "1430-check-if-a-string-is-a-valid-sequence-from-root-to-leaves-path-in-a-binary-tree",
+  "patterns": [
+   "DFS",
+   "Tree Traversal"
+  ],
+  "trigger": "Check whether an array matches a root-to-leaf path in a tree.",
+  "key_idea": "DFS carrying an index into arr; fail early on value mismatch, succeed only when a leaf is reached at the last index.",
+  "approach": [
+   "dfs(node, idx): return False if node is null, idx out of range, or value mismatch.",
+   "If node is a leaf, return idx == len(arr) - 1.",
+   "Return dfs(left, idx+1) or dfs(right, idx+1)."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(h)"
+  },
+  "gotcha": "Matching a prefix of the array is not enough; the path must end at a leaf exactly when the array ends."
+ },
+ {
+  "id": "1438-longest-continuous-subarray-with-absolute-diff-less-than-or-equal-to-limit",
+  "patterns": [
+   "Sliding Window",
+   "Monotonic Stack",
+   "Queue / Deque"
+  ],
+  "trigger": "Longest subarray where max minus min stays within a limit.",
+  "key_idea": "Maintain two monotonic deques (decreasing for max, increasing for min) so the window's max and min are at their fronts in O(1).",
+  "approach": [
+   "For each right, push into both deques keeping them monotonic.",
+   "While maxDeque front - minDeque front > limit, advance left.",
+   "Pop from a deque's front if its value equals nums[left] being removed.",
+   "Track the max window length."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "When shrinking, only pop a deque's front if it equals the element leaving the window."
+ },
+ {
+  "id": "1448-count-good-nodes-in-binary-tree",
+  "patterns": [
+   "DFS",
+   "Tree Traversal"
+  ],
+  "trigger": "A node's status depends on the maximum value along its root-to-node path.",
+  "key_idea": "Pass the running maximum down the DFS; a node is good if its value is at least that max.",
+  "approach": [
+   "Start DFS with (root, root.val).",
+   "If node.val >= maxSoFar, count it.",
+   "Recurse into children with max(maxSoFar, node.val).",
+   "Return the total count."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(h)"
+  },
+  "gotcha": "Use >= not >; the root and nodes equal to the path max are good."
+ },
+ {
+  "id": "1480-running-sum-of-1d-array",
+  "patterns": [
+   "Prefix Sum"
+  ],
+  "trigger": "Each output element is the sum of all inputs up to that index.",
+  "key_idea": "Each running sum is the previous running sum plus the current element.",
+  "approach": [
+   "Set res[0] = nums[0].",
+   "For i from 1, res[i] = res[i-1] + nums[i].",
+   "Return res."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n) or O(1) if in place"
+  },
+  "gotcha": "Recomputing each sum from scratch is O(n^2); reuse the previous total."
+ },
+ {
+  "id": "1481-least-number-of-unique-integers-after-k-removals",
+  "patterns": [
+   "Greedy",
+   "Sorting",
+   "Hash Map"
+  ],
+  "trigger": "Remove k elements to minimize the number of distinct values remaining.",
+  "key_idea": "Remove values with the smallest frequencies first, since they cost the fewest removals to eliminate entirely; the learner buckets by frequency to avoid sorting.",
+  "approach": [
+   "Count frequencies.",
+   "Sort frequencies ascending (or bucket them).",
+   "Subtract frequencies from k while k covers a whole value, decrementing unique count.",
+   "Return the remaining unique count."
+  ],
+  "complexity": {
+   "time": "O(n log n) sorted, O(n) bucketed",
+   "space": "O(n)"
+  },
+  "gotcha": "Stop when k cannot fully remove the next value; partial removal does not reduce uniques."
+ },
+ {
+  "id": "1499-max-value-of-equation",
+  "patterns": [
+   "Monotonic Stack",
+   "Sliding Window",
+   "Queue / Deque"
+  ],
+  "trigger": "Maximize a pairwise expression over points sorted by x within a distance window.",
+  "key_idea": "Since xi < xj the value becomes (yi - xi) + (yj + xj), so for each j you need the max (yi - xi) among points within k, kept in a monotonic deque.",
+  "approach": [
+   "For each point (x, y), pop deque front while x - front.x > k.",
+   "If deque nonempty, update answer with x + y + (front.y - front.x).",
+   "Pop from back while back's (y - x) <= current (y - x).",
+   "Append the current point."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Rewrite the absolute value using the sorted order first; without that the deque key is unclear."
+ },
+ {
+  "id": "1512-number-of-good-pairs",
+  "patterns": [
+   "Hash Map"
+  ],
+  "trigger": "Count pairs (i, j) with i < j and equal values.",
+  "key_idea": "When you see a value, every earlier occurrence forms a pair with it, so add the running count before incrementing.",
+  "approach": [
+   "Keep a count map.",
+   "For each num, add count[num] to the answer.",
+   "Then increment count[num]."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Add before incrementing, otherwise each element pairs with itself."
+ },
+ {
+  "id": "1518-array-transformation",
+  "patterns": [
+   "Simulation"
+  ],
+  "trigger": "Apply a neighbor-based rule to an array day by day until it stops changing.",
+  "key_idea": "Each day's changes must be computed from a snapshot of the previous day, and you loop until a full pass makes no change.",
+  "approach": [
+   "Loop while a change occurred in the last pass.",
+   "Copy the array as prev.",
+   "For each interior index, compare prev neighbors and adjust arr.",
+   "Stop when no element changed."
+  ],
+  "complexity": {
+   "time": "O(n * days)",
+   "space": "O(n)"
+  },
+  "gotcha": "Updating in place while reading neighbors corrupts the result; read from the copy."
+ },
+ {
+  "id": "1518-water-bottles",
+  "patterns": [
+   "Simulation",
+   "Math"
+  ],
+  "trigger": "Drink bottles, trade empties for full ones, repeat until you cannot trade.",
+  "key_idea": "Track empties; each round drink all full bottles, convert empties into new full ones with the remainder carried over.",
+  "approach": [
+   "While full bottles > 0, add them to drank and to empties.",
+   "New full = empties // numExchange.",
+   "empties = empties % numExchange.",
+   "Return drank."
+  ],
+  "complexity": {
+   "time": "O(log n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Forgetting to carry over leftover empties between rounds undercounts."
+ },
+ {
+  "id": "1539-first-missing-positive",
+  "patterns": [
+   "Cyclic Sort",
+   "Hash Map"
+  ],
+  "trigger": "Smallest missing positive with O(n) time and O(1) extra space.",
+  "key_idea": "The answer is in 1..n+1, so place each value v at index v-1 (cyclic sort), then the first index holding the wrong value gives the answer; the learner's set-based version uses O(n) space.",
+  "approach": [
+   "For each i, swap nums[i] to index nums[i]-1 while it is in 1..n and misplaced.",
+   "Scan for the first index i where nums[i] != i + 1.",
+   "Return i + 1, or n + 1 if all match."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Guard the swap against duplicates (nums[i] == nums[nums[i]-1]) or the loop never ends."
+ },
+ {
+  "id": "1539-kth-missing-positive-number",
+  "patterns": [
+   "Binary Search"
+  ],
+  "trigger": "Find the kth missing number in a sorted array of positives.",
+  "key_idea": "The number of missing values before arr[i] is arr[i] - i - 1, which is monotonic, so binary search for the first index where it reaches k; the answer is low + k.",
+  "approach": [
+   "Binary search on index with missing(i) = arr[i] - i - 1.",
+   "If missing(mid) < k, go right; else go left.",
+   "Return low + k."
+  ],
+  "complexity": {
+   "time": "O(log n)",
+   "space": "O(1)"
+  },
+  "gotcha": "The linear scan the learner wrote is fine for small inputs but the missing count formula is the interview answer."
+ },
+ {
+  "id": "1544-make-the-string-great",
+  "patterns": [
+   "Stack",
+   "String"
+  ],
+  "trigger": "Remove adjacent characters that are the same letter in opposite cases, repeatedly.",
+  "key_idea": "Same stack trick as adjacent duplicates: pop when the incoming char is the case-swapped top, else push.",
+  "approach": [
+   "For each char, if stack and top == char.swapcase(), pop.",
+   "Otherwise push the char.",
+   "Join the stack."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Two identical letters of the same case are not a bad pair; only opposite-case matches cancel."
+ },
+ {
+  "id": "1557-minimum-number-of-vertices-to-reach-all-nodes",
+  "patterns": [
+   "Graph"
+  ],
+  "trigger": "Smallest set of starting nodes that can reach every node in a DAG.",
+  "key_idea": "In a DAG, any node with an incoming edge can be reached from its parent, so the answer is exactly the set of nodes with in-degree zero.",
+  "approach": [
+   "Collect every destination node from the edges into a set.",
+   "Iterate nodes 0..n-1 and keep those not in the set.",
+   "Return that list."
+  ],
+  "complexity": {
+   "time": "O(n + e)",
+   "space": "O(n)"
+  },
+  "gotcha": "No traversal is needed; this only works because the graph is acyclic."
+ },
+ {
+  "id": "1563-stone-game-v",
+  "patterns": [
+   "Dynamic Programming",
+   "Prefix Sum"
+  ],
+  "trigger": "Split a range at every possible point, keep the smaller side, and maximize total over recursive splits.",
+  "key_idea": "dp(l, r) tries each split and recurses into the smaller-sum side (either side on tie), adding that side's sum.",
+  "approach": [
+   "Define dfs(left, right) with memoization; single element returns 0.",
+   "Iterate split points, tracking left sum and right sum via prefix sums.",
+   "Recurse into the smaller side and add its sum; on tie take the better side.",
+   "Return the max."
+  ],
+  "complexity": {
+   "time": "O(n^3)",
+   "space": "O(n^2)"
+  },
+  "gotcha": "On equal sums Alice may choose either half, so take the max of both branches."
+ },
+ {
+  "id": "1572-matrix-diagonal-sum",
+  "patterns": [
+   "Matrix",
+   "Math"
+  ],
+  "trigger": "Sum the two diagonals of a square matrix.",
+  "key_idea": "Primary diagonal is mat[i][i] and secondary is mat[i][n-1-i]; for odd n the center cell is on both and must be subtracted once.",
+  "approach": [
+   "Loop i from 0 to n-1 adding mat[i][i] and mat[i][n-1-i].",
+   "If n is odd, subtract mat[n//2][n//2].",
+   "Return the sum."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Double-counting the center element when n is odd."
+ },
+ {
+  "id": "1609-even-odd-tree",
+  "patterns": [
+   "BFS",
+   "Tree Traversal"
+  ],
+  "trigger": "Validate per-level constraints on parity and ordering in a tree.",
+  "key_idea": "Level-order BFS lets you check each level in isolation: even levels need odd, strictly increasing values; odd levels need even, strictly decreasing values.",
+  "approach": [
+   "BFS one level at a time, tracking the level index.",
+   "Set prev to -inf on even levels, +inf on odd levels.",
+   "For each node check parity and strict ordering against prev; return False on failure.",
+   "Return True after all levels pass."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(w)"
+  },
+  "gotcha": "Ordering must be strict; equal adjacent values on a level are invalid."
+ },
+ {
+  "id": "1631-path-with-minimum-effort",
+  "patterns": [
+   "Heap / Priority Queue",
+   "Graph",
+   "Matrix"
+  ],
+  "trigger": "Minimize the maximum edge weight along a path in a grid.",
+  "key_idea": "Dijkstra with the cost of a path defined as the max absolute height difference so far instead of a sum.",
+  "approach": [
+   "Min-heap of (maxDiff, r, c) starting at (0, 0, 0).",
+   "Pop; if it is the target return its diff; skip if visited.",
+   "For each neighbor push max(diff, |height diff|).",
+   "Mark cells visited when popped."
+  ],
+  "complexity": {
+   "time": "O(mn log(mn))",
+   "space": "O(mn)"
+  },
+  "gotcha": "Relax with max, not plus; using a sum solves a different problem."
+ },
+ {
+  "id": "1636-sort-array-by-increasing-frequency",
+  "patterns": [
+   "Sorting",
+   "Hash Map"
+  ],
+  "trigger": "Sort values by how often they occur, with a tie-breaker.",
+  "key_idea": "Count frequencies then sort with a composite key (frequency ascending, value descending).",
+  "approach": [
+   "Build a Counter of nums.",
+   "Sort nums by key (freq[x], -x).",
+   "Return the sorted list."
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(n)"
+  },
+  "gotcha": "The tie-break is decreasing value, so negate x in the key."
+ },
+ {
+  "id": "1672-richest-customer-wealth",
+  "patterns": [
+   "Matrix"
+  ],
+  "trigger": "Find the maximum row sum of a grid.",
+  "key_idea": "Sum each row and keep the largest.",
+  "approach": [
+   "For each row, compute sum(row).",
+   "Track the maximum.",
+   "Return it."
+  ],
+  "complexity": {
+   "time": "O(mn)",
+   "space": "O(1)"
+  },
+  "gotcha": "None really; just do not sum columns by mistake."
+ },
+ {
+  "id": "1685-sum-of-absolute-differences-in-a-sorted-array",
+  "patterns": [
+   "Prefix Sum",
+   "Math"
+  ],
+  "trigger": "For each element compute the sum of absolute differences to all others in a sorted array.",
+  "key_idea": "Sorted order removes the absolute value: left part contributes i*nums[i] - leftSum and right part contributes rightSum - (n-i-1)*nums[i].",
+  "approach": [
+   "Build a prefix sum array.",
+   "For index i, leftSum = prefix[i], rightSum = total - prefix[i] - nums[i].",
+   "result[i] = i*nums[i] - leftSum + rightSum - (n-i-1)*nums[i]."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Exclude nums[i] itself from rightSum or the formula is off by nums[i]."
+ },
+ {
+  "id": "1732-find-the-highest-altitude",
+  "patterns": [
+   "Prefix Sum"
+  ],
+  "trigger": "Given step-by-step gains, find the peak cumulative value.",
+  "key_idea": "Running sum of gains gives each altitude; track the max, starting from 0.",
+  "approach": [
+   "Set curr = 0 and best = 0.",
+   "For each gain, add to curr and update best.",
+   "Return best."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)"
+  },
+  "gotcha": "Start best at 0, since the starting point at altitude 0 counts."
+ },
+ {
+  "id": "1748-sum-of-unique-elements",
+  "patterns": [
+   "Hash Map"
+  ],
+  "trigger": "Sum the values that appear exactly once.",
+  "key_idea": "Count occurrences, then add up keys whose count is 1.",
+  "approach": [
+   "Build a Counter of nums.",
+   "Sum keys with frequency exactly 1.",
+   "Return the sum."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)"
+  },
+  "gotcha": "Unique means appears once, not distinct; duplicates contribute nothing."
+ }
+]
